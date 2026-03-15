@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild -version)",
+      "Bash(plutil -lint \"/Users/heizeer/Library/Mobile Documents/com~apple~CloudDocs/MyCoreAssets/MyCoreAssetsApp.xcodeproj/project.pbxproj\")",
+      "Bash(sudo xcode-select:*)"
+    ]
+  }
+}
