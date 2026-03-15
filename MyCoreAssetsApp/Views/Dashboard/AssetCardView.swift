@@ -2,10 +2,47 @@ import SwiftUI
 
 struct AssetCardView: View {
     let asset: Asset
+    let totalPortfolioValueCNY: Double
+
+    private var currentPositionPercent: Double {
+        asset.currentPositionRatio(totalPortfolioCNY: totalPortfolioValueCNY)
+    }
+
+    private var targetPositionPercent: Double {
+        asset.targetPositionRatio
+    }
+
+    private var maxPositionPercent: Double {
+        asset.maxPositionRatio ?? 100
+    }
+
+    private var positionDeviation: Double {
+        currentPositionPercent - targetPositionPercent
+    }
+
+    private var deviationText: String {
+        let absValue = abs(positionDeviation)
+        if currentPositionPercent >= maxPositionPercent {
+            return "已超过仓位上限"
+        }
+        if positionDeviation > 1 {
+            return "超出目标 +\(String(format: "%.1f", absValue))%"
+        }
+        if positionDeviation < -1 {
+            return "低于目标 -\(String(format: "%.1f", absValue))%"
+        }
+        return "接近目标仓位"
+    }
+
+    private var deviationColor: Color {
+        if currentPositionPercent >= maxPositionPercent { return .valuationRed }
+        if positionDeviation > 3 { return .valuationOrange }
+        if positionDeviation < -3 { return .themePrimary }
+        return .valuationDeepGreen
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top row: name + price
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack(spacing: Spacing.sm) {
@@ -16,25 +53,23 @@ struct AssetCardView: View {
                         Text(asset.symbol)
                             .font(.smallCaption)
                             .foregroundColor(.textTertiary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, Spacing.xs)
                             .background(Color.pageBg)
                             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
                     }
 
                     HStack(spacing: Spacing.xs) {
-                        Text(asset.market.rawValue)
+                        Text(asset.marketDisplayName)
                             .font(.smallCaption)
                             .foregroundColor(.textSecondary)
 
-                        // Valuation badge
-                        Text(asset.valuation.label)
+                        Text(asset.valuationLevel.rawValue)
                             .font(.smallCaption)
-                            .fontWeight(.medium)
-                            .foregroundColor(asset.valuation.color)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(asset.valuation.color.opacity(0.12))
+                            .foregroundColor(asset.valuationLevel.color)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, Spacing.xs)
+                            .background(asset.valuationLevel.color.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
                     }
                 }
@@ -42,119 +77,130 @@ struct AssetCardView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: Spacing.xs) {
-                    Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice))")
+                    Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
                         .font(.sectionTitle)
                         .foregroundColor(.textPrimary)
 
-                    Text("\(asset.priceChange >= 0 ? "+" : "")\(String(format: "%.2f%%", asset.priceChange))")
+                    Text("成本 \(asset.currencySymbol)\(formatPrice(asset.averageCost, currency: asset.currency))")
                         .font(.smallCaption)
-                        .foregroundColor(asset.priceChange >= 0 ? .profitGreen : .lossRed)
+                        .foregroundColor(.textSecondary)
                 }
             }
 
             Spacer().frame(height: Spacing.md)
 
-            // Position bar
             VStack(spacing: Spacing.sm) {
                 HStack {
                     Text("仓位")
                         .font(.caption)
                         .foregroundColor(.textSecondary)
                     Spacer()
-                    Text("\(String(format: "%.1f", asset.currentPositionPercent))%")
+                    Text("\(String(format: "%.1f", currentPositionPercent))%")
                         .font(.positionPercent)
                         .foregroundColor(.themePrimary)
                 }
 
                 PositionBar(
-                    current: asset.currentPositionPercent,
-                    target: asset.targetPositionPercent,
-                    max: asset.maxPositionPercent
+                    current: currentPositionPercent,
+                    target: targetPositionPercent,
+                    max: asset.maxPositionRatio
                 )
 
-                // Deviation hint
                 HStack {
-                    Text(asset.deviationText)
+                    Text(deviationText)
                         .font(.smallCaption)
-                        .foregroundColor(asset.deviationColor)
+                        .foregroundColor(deviationColor)
                     Spacer()
-                    Text("目标 \(String(format: "%.0f", asset.targetPositionPercent))%")
+                    Text("目标 \(String(format: "%.0f", targetPositionPercent))%")
                         .font(.smallCaption)
                         .foregroundColor(.textTertiary)
                 }
+            }
+
+            Spacer().frame(height: Spacing.sm)
+
+            HStack {
+                Text("市值 ¥\(AppNumberFormat.wholeString(asset.currentValueCNY))")
+                    .font(.smallCaption)
+                    .foregroundColor(.textSecondary)
+                Spacer()
+                Text("盈亏 \(String(format: "%+.1f%%", asset.profitLossPercent))")
+                    .font(.smallCaption)
+                    .foregroundColor(asset.profitLossPercent >= 0 ? .profitGreen : .lossRed)
             }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
 
-    private func formatPrice(_ price: Double) -> String {
-        if price >= 10000 {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.maximumFractionDigits = 0
-            return formatter.string(from: NSNumber(value: price)) ?? "0"
-        } else if price >= 1 {
-            return String(format: "%.2f", price)
-        } else {
-            return String(format: "%.4f", price)
-        }
+    private func formatPrice(_ price: Double, currency: String) -> String {
+        AppNumberFormat.priceString(price, currency: currency, market: asset.market)
     }
 }
-
-// MARK: - Position Bar
 
 struct PositionBar: View {
     let current: Double
     let target: Double
-    let max: Double
+    let max: Double?
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let barHeight: CGFloat = 8
-            let ceiling = Swift.max(self.max + 5, current + 5)
-            let scale = width / ceiling
+            let barHeight = Spacing.sm
+            let maxLimit = max ?? 100
+            let ceiling = Swift.max(maxLimit + 5, current + 5)
+            let scale = width / CGFloat(ceiling)
 
             ZStack(alignment: .leading) {
-                // Background
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
                     .fill(Color.divider.opacity(0.5))
                     .frame(height: barHeight)
 
-                // Current fill
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
                     .fill(
-                        current >= max ? Color.valuationRed :
+                        current >= maxLimit ? Color.valuationRed :
                         current > target ? Color.valuationOrange :
                         Color.themePrimary
                     )
-                    .frame(width: current * scale, height: barHeight)
+                    .frame(width: Swift.min(CGFloat(current) * scale, width), height: barHeight)
 
-                // Target line
                 Rectangle()
                     .fill(Color.textTertiary)
-                    .frame(width: 1.5, height: 14)
-                    .offset(x: target * scale)
+                    .frame(width: 2, height: Spacing.md)
+                    .offset(x: CGFloat(target) * scale)
 
-                // Max line
-                Rectangle()
-                    .fill(Color.valuationRed.opacity(0.6))
-                    .frame(width: 1.5, height: 14)
-                    .offset(x: max * scale)
+                if let max {
+                    Rectangle()
+                        .fill(Color.valuationRed.opacity(0.6))
+                        .frame(width: 2, height: Spacing.md)
+                        .offset(x: CGFloat(max) * scale)
+                }
             }
         }
-        .frame(height: 14)
+        .frame(height: Spacing.md)
     }
 }
 
 #Preview {
-    VStack(spacing: 12) {
-        ForEach(MockData.assets) { asset in
-            AssetCardView(asset: asset)
-        }
+    VStack(spacing: Spacing.sm) {
+        AssetCardView(
+            asset: Asset(
+                name: "贵州茅台",
+                symbol: "600519",
+                market: MarketCode.cn.rawValue,
+                currency: "CNY",
+                idealBuyPrice: 1500,
+                idealSellPrice: 2200,
+                currentPrice: 1680,
+                holdingQuantity: 120,
+                averageCost: 1550,
+                targetPositionRatio: 25,
+                maxPositionRatio: 35
+            ),
+            totalPortfolioValueCNY: 1_250_000
+        )
     }
     .padding()
     .background(Color.pageBg)

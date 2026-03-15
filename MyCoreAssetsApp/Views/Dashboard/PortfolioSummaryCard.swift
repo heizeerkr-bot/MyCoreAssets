@@ -2,47 +2,48 @@ import SwiftUI
 
 struct PortfolioSummaryCard: View {
     let totalValue: Double
+    let initialCash: Double
     let totalInvested: Double
     let remainingCash: Double
+    let lastUpdatedAt: Date?
 
-    private var profitLoss: Double { totalValue - totalInvested }
+    private var profitLoss: Double { totalValue - initialCash }
     private var profitLossPercent: Double {
-        guard totalInvested > 0 else { return 0 }
-        return profitLoss / totalInvested * 100
+        guard initialCash > 0 else { return 0 }
+        return profitLoss / initialCash * 100
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("总资产")
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.cardBg.opacity(0.8))
 
-            Text("¥ \(formatNumber(totalValue))")
+            Text("¥ \(AppNumberFormat.wholeString(totalValue))")
                 .font(.superLargeTitle)
-                .foregroundColor(.white)
+                .foregroundColor(.cardBg)
 
             HStack(spacing: Spacing.xs) {
                 Image(systemName: profitLoss >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 12))
+                    .font(.smallCaption)
                 Text("\(profitLoss >= 0 ? "+" : "")\(formatNumber(profitLoss))")
                     .font(.caption)
                 Text("(\(String(format: "%+.1f%%", profitLossPercent)))")
                     .font(.caption)
             }
-            .foregroundColor(.white.opacity(0.9))
+            .foregroundColor(.cardBg.opacity(0.9))
 
             Divider()
-                .background(Color.white.opacity(0.3))
+                .background(Color.cardBg.opacity(0.3))
 
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("已投入")
                         .font(.smallCaption)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.cardBg.opacity(0.7))
                     Text("¥ \(formatNumber(totalInvested))")
                         .font(.bodyText)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(.cardBg)
                 }
 
                 Spacer()
@@ -50,11 +51,19 @@ struct PortfolioSummaryCard: View {
                 VStack(alignment: .trailing, spacing: Spacing.xs) {
                     Text("剩余现金")
                         .font(.smallCaption)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.cardBg.opacity(0.7))
                     Text("¥ \(formatNumber(remainingCash))")
                         .font(.bodyText)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(.cardBg)
+                }
+            }
+
+            if let lastUpdatedAt {
+                HStack {
+                    Spacer()
+                    Text("更新时间 \(timeString(lastUpdatedAt))")
+                        .font(.smallCaption)
+                        .foregroundColor(.cardBg.opacity(0.8))
                 }
             }
         }
@@ -70,18 +79,21 @@ struct PortfolioSummaryCard: View {
     }
 
     private func formatNumber(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "0"
+        AppNumberFormat.wholeString(value)
+    }
+
+    private func timeString(_ date: Date) -> String {
+        AppDateFormat.timeString(date)
     }
 }
 
 #Preview {
     PortfolioSummaryCard(
-        totalValue: MockData.totalValueCNY,
-        totalInvested: MockData.totalInvested,
-        remainingCash: MockData.remainingCash
+        totalValue: 1_458_920,
+        initialCash: 1_250_000,
+        totalInvested: 987_500,
+        remainingCash: 471_420,
+        lastUpdatedAt: .now
     )
     .padding()
     .background(Color.pageBg)

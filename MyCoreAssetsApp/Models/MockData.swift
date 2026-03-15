@@ -1,12 +1,40 @@
 import SwiftUI
 
-// MARK: - Enums
+enum MarketCode: String, CaseIterable, Codable {
+    case cn = "CN"
+    case hk = "HK"
+    case us = "US"
+    case btc = "BTC"
+    case fund = "FUND"
 
-enum Market: String {
-    case cn = "A股"
-    case hk = "港股"
-    case us = "美股"
-    case crypto = "加密货币"
+    var displayName: String {
+        switch self {
+        case .cn: return "A股"
+        case .hk: return "港股"
+        case .us: return "美股"
+        case .btc: return "虚拟货币"
+        case .fund: return "基金"
+        }
+    }
+}
+
+enum TradeType: String, CaseIterable, Codable {
+    case buy = "BUY"
+    case sell = "SELL"
+
+    var displayName: String {
+        switch self {
+        case .buy: return "买入"
+        case .sell: return "卖出"
+        }
+    }
+
+    var tintColor: Color {
+        switch self {
+        case .buy: return .valuationDeepGreen
+        case .sell: return .valuationRed
+        }
+    }
 }
 
 enum ValuationLevel: String, CaseIterable {
@@ -26,161 +54,95 @@ enum ValuationLevel: String, CaseIterable {
         }
     }
 
-    var label: String { rawValue }
-}
-
-// MARK: - Asset Model
-
-struct Asset: Identifiable {
-    let id = UUID()
-    let name: String
-    let symbol: String
-    let market: Market
-    let currency: String
-
-    // Prices (in original currency)
-    let currentPrice: Double
-    let idealBuyPrice: Double
-    let idealSellPrice: Double
-    let priceChange: Double // percentage
-
-    // Position
-    let currentPositionPercent: Double
-    let targetPositionPercent: Double
-    let maxPositionPercent: Double
-
-    // Holding
-    let holdingQuantity: Double
-    let averageCost: Double
-    let currentValueCNY: Double
-
-    // Valuation
-    let valuation: ValuationLevel
-
-    var positionDeviation: Double {
-        currentPositionPercent - targetPositionPercent
-    }
-
-    var isOverTarget: Bool { positionDeviation > 0 }
-    var isOverMax: Bool { currentPositionPercent >= maxPositionPercent }
-
-    var deviationText: String {
-        let dev = abs(positionDeviation)
-        if isOverMax {
-            return "已达上限"
-        } else if positionDeviation > 1 {
-            return "超出目标 +\(String(format: "%.1f", dev))%"
-        } else if positionDeviation < -1 {
-            return "低于目标 -\(String(format: "%.1f", dev))%"
-        } else {
-            return "接近目标"
+    var sortRank: Int {
+        switch self {
+        case .deepUndervalued: return 0
+        case .undervalued: return 1
+        case .fair: return 2
+        case .overvalued: return 3
+        case .deepOvervalued: return 4
         }
     }
+}
 
-    var deviationColor: Color {
-        if isOverMax { return .valuationRed }
-        if positionDeviation > 3 { return .valuationOrange }
-        if positionDeviation < -3 { return .themePrimary }
-        return .valuationDeepGreen
-    }
+enum DashboardSortOption: String, CaseIterable, Identifiable {
+    case defaultOrder = "默认排序"
+    case positionHighToLow = "仓位从高到低"
+    case deviationHighToLow = "仓位偏离目标从大到小"
+    case undervaluedFirst = "估值低估优先"
 
-    var profitLossPercent: Double {
-        guard averageCost > 0 else { return 0 }
-        return (currentPrice - averageCost) / averageCost * 100
-    }
+    var id: String { rawValue }
+}
 
-    var currencySymbol: String {
+enum CurrencyConverter {
+    static func fxRateToCNY(currency: String) -> Double {
         switch currency {
-        case "CNY": return "¥"
-        case "HKD": return "HK$"
-        case "USD": return "$"
-        default: return ""
+        case "CNY": return 1
+        case "HKD": return 0.92
+        case "USD": return 7.20
+        default: return 1
         }
     }
 }
 
-// MARK: - Mock Data
+enum AppNumberFormat {
+    static let whole: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
 
-enum MockData {
-    static let initialCapital: Double = 1_250_000
-    static let totalInvested: Double = 987_500
+    static let twoDigits: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter
+    }()
 
-    static let assets: [Asset] = [
-        Asset(
-            name: "贵州茅台",
-            symbol: "600519",
-            market: .cn,
-            currency: "CNY",
-            currentPrice: 1681,
-            idealBuyPrice: 1500,
-            idealSellPrice: 2300,
-            priceChange: 1.25,
-            currentPositionPercent: 30.2,
-            targetPositionPercent: 30,
-            maxPositionPercent: 40,
-            holdingQuantity: 300,
-            averageCost: 1545,
-            currentValueCNY: 504_300,
-            valuation: .undervalued
-        ),
-        Asset(
-            name: "腾讯控股",
-            symbol: "00700",
-            market: .hk,
-            currency: "HKD",
-            currentPrice: 388.6,
-            idealBuyPrice: 300,
-            idealSellPrice: 500,
-            priceChange: -0.82,
-            currentPositionPercent: 29.5,
-            targetPositionPercent: 25,
-            maxPositionPercent: 35,
-            holdingQuantity: 800,
-            averageCost: 355,
-            currentValueCNY: 368_750,
-            valuation: .fair
-        ),
-        Asset(
-            name: "Apple",
-            symbol: "AAPL",
-            market: .us,
-            currency: "USD",
-            currentPrice: 198.5,
-            idealBuyPrice: 150,
-            idealSellPrice: 200,
-            priceChange: 0.45,
-            currentPositionPercent: 22.8,
-            targetPositionPercent: 20,
-            maxPositionPercent: 25,
-            holdingQuantity: 150,
-            averageCost: 165,
-            currentValueCNY: 285_000,
-            valuation: .overvalued
-        ),
-        Asset(
-            name: "比特币",
-            symbol: "BTC",
-            market: .crypto,
-            currency: "USD",
-            currentPrice: 43500,
-            idealBuyPrice: 50000,
-            idealSellPrice: 100000,
-            priceChange: 3.12,
-            currentPositionPercent: 5.5,
-            targetPositionPercent: 10,
-            maxPositionPercent: 15,
-            holdingQuantity: 0.15,
-            averageCost: 38000,
-            currentValueCNY: 68_750,
-            valuation: .deepUndervalued
-        ),
-    ]
-
-    static var totalValueCNY: Double {
-        assets.reduce(0) { $0 + $1.currentValueCNY }
+    static func wholeString(_ value: Double) -> String {
+        whole.string(from: NSNumber(value: value)) ?? "0"
     }
 
-    static var remainingCash: Double {
-        initialCapital - totalInvested
+    static func twoDigitString(_ value: Double) -> String {
+        twoDigits.string(from: NSNumber(value: value)) ?? "0.00"
+    }
+
+    static func priceString(_ price: Double, currency: String, market: String) -> String {
+        if price >= 10000 {
+            return wholeString(price)
+        }
+        let isCrypto = currency == "USD" && market == MarketCode.btc.rawValue
+        return String(format: isCrypto ? "%.4f" : "%.2f", price)
+    }
+
+    static func quantityString(_ quantity: Double) -> String {
+        if quantity == floor(quantity) {
+            return String(format: "%.0f", quantity)
+        }
+        return String(format: "%.4f", quantity)
+    }
+}
+
+enum AppDateFormat {
+    static let time: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
+    static let dateTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm"
+        return f
+    }()
+
+    static func timeString(_ date: Date) -> String {
+        time.string(from: date)
+    }
+
+    static func dateTimeString(_ date: Date) -> String {
+        dateTime.string(from: date)
     }
 }

@@ -1,16 +1,53 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct MyCoreAssetsApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentRootView()
         }
+        .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self])
     }
 }
 
-struct ContentView: View {
+struct ContentRootView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Portfolio.id) private var portfolios: [Portfolio]
     @State private var selectedTab = 0
+
+    var body: some View {
+        Group {
+            if let portfolio = portfolios.first {
+                if portfolio.hasCompletedSetup {
+                    MainTabView(selectedTab: $selectedTab)
+                } else {
+                    InitialSetupView(portfolio: portfolio)
+                }
+            } else {
+                ProgressView()
+                    .tint(.themePrimary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.pageBg)
+            }
+        }
+        .onAppear {
+            ensurePortfolioExists()
+        }
+        .onChange(of: portfolios.count) { _, _ in
+            ensurePortfolioExists()
+        }
+    }
+
+    private func ensurePortfolioExists() {
+        guard portfolios.isEmpty else { return }
+        modelContext.insert(Portfolio())
+        try? modelContext.save()
+    }
+}
+
+struct MainTabView: View {
+    @Binding var selectedTab: Int
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -21,14 +58,14 @@ struct ContentView: View {
                 }
                 .tag(0)
 
-            PlaceholderTabView("资产管理", icon: "chart.pie.fill", description: "添加和管理核心资产")
+            PlaceholderTabView("资产管理", icon: "chart.pie.fill", description: "第一批先完成初始化、看板和详情页")
                 .tabItem {
                     Image(systemName: "chart.pie.fill")
                     Text("资产")
                 }
                 .tag(1)
 
-            PlaceholderTabView("交易记录", icon: "list.bullet.rectangle", description: "查看所有买卖记录")
+            PlaceholderTabView("交易记录", icon: "list.bullet.rectangle", description: "第一批后续接入完整交易记录页")
                 .tabItem {
                     Image(systemName: "list.bullet.rectangle")
                     Text("记录")
@@ -47,5 +84,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentRootView()
+        .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self], inMemory: true)
 }

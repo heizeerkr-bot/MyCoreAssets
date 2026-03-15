@@ -17,7 +17,7 @@ struct PlaceholderTabView: View {
                 Spacer()
 
                 Image(systemName: icon)
-                    .font(.system(size: 48))
+                    .font(.superLargeTitle)
                     .foregroundColor(.themePrimary.opacity(0.4))
 
                 Text(title)

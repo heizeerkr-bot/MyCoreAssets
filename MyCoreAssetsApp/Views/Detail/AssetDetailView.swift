@@ -1,81 +1,81 @@
+import SwiftData
 import SwiftUI
 
 struct AssetDetailView: View {
     let asset: Asset
+    let totalPortfolioValueCNY: Double
+
+    @Query(sort: \Transaction.occurredAt, order: .reverse) private var transactions: [Transaction]
+
+    private var assetTransactions: [Transaction] {
+        transactions.filter { $0.asset?.id == asset.id }
+    }
+
+    private var recentTransactions: [Transaction] {
+        Array(assetTransactions.prefix(5))
+    }
+
+    private var currentPositionPercent: Double {
+        asset.currentPositionRatio(totalPortfolioCNY: totalPortfolioValueCNY)
+    }
+
+    private var targetPositionPercent: Double {
+        asset.targetPositionRatio
+    }
+
+    private var maxPositionPercent: Double? {
+        asset.maxPositionRatio
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.md) {
-                // Price Header
-                priceSection
-
-                // Position Analysis
+                priceCard
                 positionCard
-
-                // Valuation Status
                 valuationCard
-
-                // Holding Info
                 holdingCard
-
-                // Deviation Alert
-                if abs(asset.positionDeviation) > 1 || asset.isOverMax {
-                    deviationAlert
-                }
+                transactionCard
             }
             .padding(.horizontal, Spacing.screenPadding)
+            .padding(.top, Spacing.md)
             .padding(.bottom, Spacing.xl)
         }
         .background(Color.pageBg)
         .navigationTitle(asset.name)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            bottomActionBar
+        }
     }
 
-    // MARK: - Price Section
+    private var priceCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("当前价格")
+                .font(.caption)
+                .foregroundColor(.textSecondary)
 
-    private var priceSection: some View {
-        VStack(spacing: Spacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice))")
-                    .font(.assetPrice)
-                    .foregroundColor(.textPrimary)
+            Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency, market: asset.market))")
+                .font(.assetPrice)
+                .foregroundColor(.textPrimary)
 
-                Spacer()
-
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: asset.priceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.system(size: 11))
-                    Text("\(asset.priceChange >= 0 ? "+" : "")\(String(format: "%.2f%%", asset.priceChange))")
-                        .font(.caption)
-                }
-                .foregroundColor(asset.priceChange >= 0 ? .profitGreen : .lossRed)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    (asset.priceChange >= 0 ? Color.profitGreen : Color.lossRed).opacity(0.1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-            }
-
-            HStack {
+            HStack(spacing: Spacing.xs) {
                 Text(asset.symbol)
                     .font(.caption)
                     .foregroundColor(.textTertiary)
                 Text("·")
-                    .foregroundColor(.textTertiary)
-                Text(asset.market.rawValue)
                     .font(.caption)
                     .foregroundColor(.textTertiary)
-                Spacer()
+                Text(asset.marketDisplayName)
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
-
-    // MARK: - Position Card
 
     private var positionCard: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -83,59 +83,34 @@ struct AssetDetailView: View {
                 .font(.sectionTitle)
                 .foregroundColor(.textPrimary)
 
-            // Large position number
-            HStack(alignment: .firstTextBaseline) {
-                Text("\(String(format: "%.1f", asset.currentPositionPercent))")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+            HStack {
+                Text("\(String(format: "%.1f", currentPositionPercent))%")
+                    .font(.positionPercent)
                     .foregroundColor(.themePrimary)
-                Text("%")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.themePrimary)
-
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("目标 \(String(format: "%.0f%%", asset.targetPositionPercent))")
-                        .font(.caption)
+                VStack(alignment: .trailing, spacing: Spacing.xs) {
+                    Text("目标 \(String(format: "%.0f%%", targetPositionPercent))")
+                        .font(.smallCaption)
                         .foregroundColor(.textSecondary)
-                    Text("上限 \(String(format: "%.0f%%", asset.maxPositionPercent))")
-                        .font(.caption)
-                        .foregroundColor(.textTertiary)
+                    if let maxPositionPercent {
+                        Text("上限 \(String(format: "%.0f%%", maxPositionPercent))")
+                            .font(.smallCaption)
+                            .foregroundColor(.textTertiary)
+                    }
                 }
             }
 
-            // Position bar (larger version)
-            DetailPositionBar(
-                current: asset.currentPositionPercent,
-                target: asset.targetPositionPercent,
-                max: asset.maxPositionPercent
+            PositionBar(
+                current: currentPositionPercent,
+                target: targetPositionPercent,
+                max: maxPositionPercent
             )
-
-            // Legend
-            HStack(spacing: Spacing.md) {
-                legendItem(color: .themePrimary, label: "当前仓位")
-                legendItem(color: .textTertiary, label: "目标")
-                legendItem(color: .valuationRed.opacity(0.6), label: "上限")
-            }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
-
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: 12, height: 3)
-            Text(label)
-                .font(.smallCaption)
-                .foregroundColor(.textSecondary)
-        }
-    }
-
-    // MARK: - Valuation Card
 
     private var valuationCard: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -144,53 +119,39 @@ struct AssetDetailView: View {
                     .font(.sectionTitle)
                     .foregroundColor(.textPrimary)
                 Spacer()
-                Text(asset.valuation.label)
-                    .font(.bodyText)
-                    .fontWeight(.semibold)
-                    .foregroundColor(asset.valuation.color)
+                Text(asset.valuationLevel.rawValue)
+                    .font(.caption)
+                    .foregroundColor(asset.valuationLevel.color)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(asset.valuationLevel.color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
             }
 
-            // 5-level color bar
-            ValuationBar(valuation: asset.valuation)
+            ValuationScaleView(level: asset.valuationLevel)
 
-            // Price range
             HStack {
-                VStack(alignment: .leading) {
-                    Text("理想买入")
-                        .font(.smallCaption)
-                        .foregroundColor(.textTertiary)
-                    Text("\(asset.currencySymbol)\(formatPrice(asset.idealBuyPrice))")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
+                priceItem(title: "理想买入", value: "\(asset.currencySymbol)\(formatPrice(asset.idealBuyPrice, currency: asset.currency, market: asset.market))")
                 Spacer()
-                VStack {
-                    Text("当前价")
-                        .font(.smallCaption)
-                        .foregroundColor(.textTertiary)
-                    Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice))")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
-                }
-                Spacer()
-                VStack(alignment: .trailing) {
-                    Text("理想卖出")
-                        .font(.smallCaption)
-                        .foregroundColor(.textTertiary)
-                    Text("\(asset.currencySymbol)\(formatPrice(asset.idealSellPrice))")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
+                priceItem(title: "理想卖出", value: "\(asset.currencySymbol)\(formatPrice(asset.idealSellPrice, currency: asset.currency, market: asset.market))")
             }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
 
-    // MARK: - Holding Card
+    private func priceItem(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(title)
+                .font(.smallCaption)
+                .foregroundColor(.textTertiary)
+            Text(value)
+                .font(.bodyText)
+                .foregroundColor(.textPrimary)
+        }
+    }
 
     private var holdingCard: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -199,183 +160,215 @@ struct AssetDetailView: View {
                 .foregroundColor(.textPrimary)
 
             HStack {
-                holdingRow(label: "持有数量", value: formatQuantity(asset.holdingQuantity))
+                holdingItem(title: "持有数量", value: formatQuantity(asset.holdingQuantity))
                 Spacer()
-                holdingRow(label: "平均成本", value: "\(asset.currencySymbol)\(formatPrice(asset.averageCost))")
+                holdingItem(title: "平均成本", value: "\(asset.currencySymbol)\(formatPrice(asset.averageCost, currency: asset.currency, market: asset.market))")
             }
-
             HStack {
-                holdingRow(label: "当前市值", value: "¥\(formatNumber(asset.currentValueCNY))")
+                holdingItem(title: "当前市值", value: "¥\(AppNumberFormat.wholeString(asset.currentValueCNY))")
                 Spacer()
-                holdingRow(
-                    label: "浮动盈亏",
+                holdingItem(
+                    title: "浮动盈亏",
                     value: "\(String(format: "%+.1f%%", asset.profitLossPercent))",
-                    valueColor: asset.profitLossPercent >= 0 ? .profitGreen : .lossRed
+                    tint: asset.profitLossPercent >= 0 ? .profitGreen : .lossRed
                 )
             }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
 
-    private func holdingRow(label: String, value: String, valueColor: Color = .textPrimary) -> some View {
+    private func holdingItem(title: String, value: String, tint: Color = .textPrimary) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(label)
+            Text(title)
                 .font(.smallCaption)
                 .foregroundColor(.textTertiary)
             Text(value)
                 .font(.bodyText)
-                .fontWeight(.medium)
-                .foregroundColor(valueColor)
+                .foregroundColor(tint)
         }
     }
 
-    // MARK: - Deviation Alert
+    private var transactionCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack {
+                Text("最近交易")
+                    .font(.sectionTitle)
+                    .foregroundColor(.textPrimary)
+                Spacer()
+                NavigationLink {
+                    AssetTransactionListView(asset: asset)
+                } label: {
+                    Text("查看全部记录")
+                        .font(.caption)
+                        .foregroundColor(.themePrimary)
+                }
+                .buttonStyle(.plain)
+            }
 
-    private var deviationAlert: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: asset.isOverMax ? "exclamationmark.triangle.fill" : "info.circle.fill")
-                .foregroundColor(asset.deviationColor)
-            Text(asset.deviationText)
-                .font(.caption)
-                .foregroundColor(asset.deviationColor)
-            Spacer()
+            if recentTransactions.isEmpty {
+                Text("暂无交易记录")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            } else {
+                ForEach(recentTransactions) { transaction in
+                    transactionRow(transaction)
+                }
+            }
         }
         .padding(Spacing.cardPadding)
-        .background(asset.deviationColor.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+        .background(Color.cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
     }
 
-    // MARK: - Helpers
+    private func transactionRow(_ transaction: Transaction) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(transaction.tradeType.displayName)
+                .font(.smallCaption)
+                .foregroundColor(transaction.tradeType.tintColor)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)
+                .background(transaction.tradeType.tintColor.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
 
-    private func formatPrice(_ price: Double) -> String {
-        if price >= 10000 {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.maximumFractionDigits = 0
-            return formatter.string(from: NSNumber(value: price)) ?? "0"
-        } else if price >= 1 {
-            return String(format: "%.2f", price)
-        } else {
-            return String(format: "%.4f", price)
-        }
-    }
-
-    private func formatNumber(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "0"
-    }
-
-    private func formatQuantity(_ qty: Double) -> String {
-        if qty == floor(qty) {
-            return String(format: "%.0f", qty)
-        } else {
-            return String(format: "%.4f", qty)
-        }
-    }
-}
-
-// MARK: - Detail Position Bar
-
-struct DetailPositionBar: View {
-    let current: Double
-    let target: Double
-    let max: Double
-
-    var body: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
-            let scale = width / (max + 10)
-            let barHeight: CGFloat = 12
-
-            ZStack(alignment: .leading) {
-                // Background
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.divider.opacity(0.4))
-                    .frame(height: barHeight)
-
-                // Current fill
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(
-                        current >= max ? Color.valuationRed :
-                        current > target ? Color.valuationOrange :
-                        Color.themePrimary
-                    )
-                    .frame(width: min(current * scale, width), height: barHeight)
-
-                // Target marker
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.textTertiary)
-                        .frame(width: 2, height: 20)
-                }
-                .offset(x: target * scale - 1)
-
-                // Max marker
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.valuationRed.opacity(0.6))
-                        .frame(width: 2, height: 20)
-                }
-                .offset(x: max * scale - 1)
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("价格 \(asset.currencySymbol)\(formatPrice(transaction.price, currency: asset.currency, market: asset.market)) · 数量 \(formatQuantity(transaction.quantity))")
+                    .font(.caption)
+                    .foregroundColor(.textPrimary)
+                Text(dateTimeText(transaction.occurredAt))
+                    .font(.smallCaption)
+                    .foregroundColor(.textTertiary)
             }
+            Spacer()
+            Text("¥\(AppNumberFormat.wholeString(transaction.cnyAmount ?? transaction.tradeAmountInOriginalCurrency * asset.fxRateToCNY))")
+                .font(.caption)
+                .foregroundColor(.textSecondary)
         }
-        .frame(height: 20)
+    }
+
+    private var bottomActionBar: some View {
+        HStack(spacing: Spacing.md) {
+            Button {
+                // 模块 5 实现交易逻辑
+            } label: {
+                Text("买入")
+                    .font(.bodyText)
+                    .foregroundColor(.profitGreen)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.md)
+                    .background(Color.profitGreen.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                // 模块 5 实现交易逻辑
+            } label: {
+                Text("卖出")
+                    .font(.bodyText)
+                    .foregroundColor(.lossRed)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.md)
+                    .background(Color.lossRed.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Spacing.screenPadding)
+        .padding(.vertical, Spacing.md)
+        .background(Color.pageBg)
+    }
+
+    private func formatPrice(_ price: Double, currency: String, market: String) -> String {
+        AppNumberFormat.priceString(price, currency: currency, market: market)
+    }
+
+    private func formatQuantity(_ quantity: Double) -> String {
+        AppNumberFormat.quantityString(quantity)
+    }
+
+    private func dateTimeText(_ date: Date) -> String {
+        AppDateFormat.dateTimeString(date)
     }
 }
 
-// MARK: - Valuation Bar
+struct AssetTransactionListView: View {
+    let asset: Asset
 
-struct ValuationBar: View {
-    let valuation: ValuationLevel
+    @Query(sort: \Transaction.occurredAt, order: .reverse) private var transactions: [Transaction]
 
-    private let levels: [ValuationLevel] = ValuationLevel.allCases
+    private var assetTransactions: [Transaction] {
+        transactions.filter { $0.asset?.id == asset.id }
+    }
 
     var body: some View {
-        VStack(spacing: Spacing.sm) {
-            GeometryReader { geo in
-                let segmentWidth = geo.size.width / CGFloat(levels.count)
+        ScrollView {
+            VStack(spacing: Spacing.sm) {
+                if assetTransactions.isEmpty {
+                    Text("暂无交易记录")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(Spacing.xl)
+                        .background(Color.cardBg)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                } else {
+                    ForEach(assetTransactions) { transaction in
+                        HStack(spacing: Spacing.md) {
+                            Text(transaction.tradeType.displayName)
+                                .font(.smallCaption)
+                                .foregroundColor(transaction.tradeType.tintColor)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.vertical, Spacing.xs)
+                                .background(transaction.tradeType.tintColor.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
 
-                ZStack(alignment: .leading) {
-                    // Color segments
-                    HStack(spacing: 2) {
-                        ForEach(levels.indices, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(levels[i].color)
-                                .frame(height: 8)
-                                .opacity(levels[i] == valuation ? 1 : 0.3)
+                            VStack(alignment: .leading, spacing: Spacing.xs) {
+                                Text("\(asset.currencySymbol)\(AppNumberFormat.twoDigitString(transaction.price)) × \(AppNumberFormat.twoDigitString(transaction.quantity))")
+                                    .font(.caption)
+                                    .foregroundColor(.textPrimary)
+                                Text(dateText(transaction.occurredAt))
+                                    .font(.smallCaption)
+                                    .foregroundColor(.textTertiary)
+                            }
+                            Spacer()
+                            Text("¥\(AppNumberFormat.wholeString(transaction.cnyAmount ?? 0))")
+                                .font(.caption)
+                                .foregroundColor(.textSecondary)
                         }
+                        .padding(Spacing.cardPadding)
+                        .background(Color.cardBg)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
                     }
-
-                    // Current indicator
-                    let index = CGFloat(levels.firstIndex(of: valuation) ?? 0)
-                    Circle()
-                        .fill(valuation.color)
-                        .frame(width: 14, height: 14)
-                        .shadow(color: valuation.color.opacity(0.4), radius: 3)
-                        .offset(x: (index + 0.5) * segmentWidth - 7)
-                        .offset(y: -3)
                 }
             }
-            .frame(height: 14)
+            .padding(.horizontal, Spacing.screenPadding)
+            .padding(.vertical, Spacing.md)
+        }
+        .background(Color.pageBg)
+        .navigationTitle("全部交易记录")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
-            // Labels
-            HStack {
-                Text("低估")
-                    .font(.system(size: 10))
-                    .foregroundColor(.valuationDeepGreen)
-                Spacer()
-                Text("合理")
-                    .font(.system(size: 10))
-                    .foregroundColor(.valuationNeutral)
-                Spacer()
-                Text("高估")
-                    .font(.system(size: 10))
-                    .foregroundColor(.valuationRed)
+    private func dateText(_ date: Date) -> String {
+        AppDateFormat.dateTimeString(date)
+    }
+}
+
+struct ValuationScaleView: View {
+    let level: ValuationLevel
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            ForEach(ValuationLevel.allCases, id: \.self) { item in
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
+                    .fill(item.color.opacity(item == level ? 1 : 0.35))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Spacing.sm)
             }
         }
     }
@@ -383,6 +376,22 @@ struct ValuationBar: View {
 
 #Preview {
     NavigationStack {
-        AssetDetailView(asset: MockData.assets[1])
+        AssetDetailView(
+            asset: Asset(
+                name: "腾讯控股",
+                symbol: "00700",
+                market: MarketCode.hk.rawValue,
+                currency: "HKD",
+                idealBuyPrice: 290,
+                idealSellPrice: 470,
+                currentPrice: 362,
+                holdingQuantity: 500,
+                averageCost: 338,
+                targetPositionRatio: 25,
+                maxPositionRatio: 35
+            ),
+            totalPortfolioValueCNY: 1_300_000
+        )
     }
+    .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self], inMemory: true)
 }
