@@ -142,7 +142,9 @@ MyCoreAssetsApp/
 
 ## 功能模块（按实现优先级）
 
-### 模块 1：SwiftData 数据层
+> **模块 1-4 已完成并通过 review，代码已在项目中。第二批请从模块 5 开始。**
+
+### 模块 1：SwiftData 数据层 ✅ 已完成
 
 **Asset Model:**
 ```swift
@@ -194,7 +196,7 @@ class Portfolio {
 }
 ```
 
-### 模块 2：初始化向导（4 步）
+### 模块 2：初始化向导（4 步） ✅ 已完成
 
 条件：`Portfolio.hasCompletedSetup == false` 时显示
 
@@ -205,22 +207,28 @@ class Portfolio {
 
 完成后 `hasCompletedSetup = true`，进入看板。
 
-### 模块 3：Dashboard 看板
+### 模块 3：Dashboard 看板 ✅ 已完成
 
 已有 Demo 代码，需改为从 SwiftData 读真实数据：
-- 总览卡片：总资产（所有资产 CNY 市值 + 剩余现金）
+- 总览卡片：总资产（所有资产 CNY 市值 + 剩余现金）、盈亏、已投入、剩余现金
+- 资产卡片只显示：资产名称+代码+市场、当前价格、仓位(%)+目标仓位(%)+偏离提示、估值状态
+- 不显示：成本、市值、盈亏（这些在详情页展示）
+- 点击卡片进入详情页
 - 资产列表：@Query 获取所有 Asset
-- 排序功能：4 种排序方式
+- 排序功能：3 种排序方式（选择即生效并关闭弹窗，无需确认按钮）
+  - 仓位从高到低
+  - 仓位偏离目标从大到小（推荐）
+  - 估值低估优先
 - 下拉/按钮刷新价格
 
-### 模块 4：资产详情页
+### 模块 4：资产详情页 ✅ 已完成
 
 已有 Demo 代码，需接真实数据并补充：
 - 最近交易列表（取该资产最近 5 条 Transaction）
 - "查看全部记录"链接
 - 底部固定的买入/卖出按钮
 
-### 模块 5：买入/卖出交易
+### 模块 5：买入/卖出交易 ⬅️ 第二批从这里开始
 
 **买入效果：**
 - 创建 Transaction 记录
@@ -346,7 +354,9 @@ Tab 选中色：`Color.themePrimary`
 
 ## 注意事项
 
-1. **属性名避免与 Swift 关键字/全局函数冲突**（如 `max`，已踩坑，需用 `Swift.max()` 或换名）
+1. **AssetDetailView 底部已有买入/卖出按钮占位**（`// 模块 5 实现交易逻辑`），第二批需要接入真实交易 Sheet
+2. **DashboardView 卡片点击已有 NavigationLink 到 AssetDetailView**，无需再改
+3. **属性名避免与 Swift 关键字/全局函数冲突**（如 `max`，已踩坑，需用 `Swift.max()` 或换名）
 2. **Sheet 弹窗不要用系统 List**（在半屏 sheet 里背景透明不可读），用自定义 VStack 布局
 3. **Button 在自定义卡片里用 `.buttonStyle(.plain)`**，避免点击闪烁
 4. **SwiftData @Model 类的属性不要用 let**，必须用 var

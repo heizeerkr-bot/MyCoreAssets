@@ -76,15 +76,9 @@ struct AssetCardView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: Spacing.xs) {
-                    Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
-                        .font(.sectionTitle)
-                        .foregroundColor(.textPrimary)
-
-                    Text("成本 \(asset.currencySymbol)\(formatPrice(asset.averageCost, currency: asset.currency))")
-                        .font(.smallCaption)
-                        .foregroundColor(.textSecondary)
-                }
+                Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
+                    .font(.sectionTitle)
+                    .foregroundColor(.textPrimary)
             }
 
             Spacer().frame(height: Spacing.md)
@@ -117,17 +111,6 @@ struct AssetCardView: View {
                 }
             }
 
-            Spacer().frame(height: Spacing.sm)
-
-            HStack {
-                Text("市值 ¥\(AppNumberFormat.wholeString(asset.currentValueCNY))")
-                    .font(.smallCaption)
-                    .foregroundColor(.textSecondary)
-                Spacer()
-                Text("盈亏 \(String(format: "%+.1f%%", asset.profitLossPercent))")
-                    .font(.smallCaption)
-                    .foregroundColor(asset.profitLossPercent >= 0 ? .profitGreen : .lossRed)
-            }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)

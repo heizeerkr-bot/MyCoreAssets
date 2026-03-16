@@ -7,7 +7,7 @@ struct DashboardView: View {
     @Query(sort: \Portfolio.id) private var portfolios: [Portfolio]
 
     @State private var showingSortSheet = false
-    @State private var selectedSortOption: DashboardSortOption = .defaultOrder
+    @State private var selectedSortOption: DashboardSortOption = .deviationHighToLow
 
     private var portfolio: Portfolio? {
         portfolios.first
@@ -23,8 +23,6 @@ struct DashboardView: View {
 
     private var sortedAssets: [Asset] {
         switch selectedSortOption {
-        case .defaultOrder:
-            return assets.sorted { $0.sortOrder < $1.sortOrder }
         case .positionHighToLow:
             return assets.sorted {
                 $0.currentPositionRatio(totalPortfolioCNY: totalPortfolioValueCNY)
@@ -158,17 +156,18 @@ struct SortSheetView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button("关闭") { dismiss() }
-                    .font(.bodyText)
-                    .foregroundColor(.themePrimary)
-                Spacer()
                 Text("排序")
                     .font(.sectionTitle)
                     .foregroundColor(.textPrimary)
                 Spacer()
-                Button("应用") { dismiss() }
-                    .font(.bodyText)
-                    .foregroundColor(.themePrimary)
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.bodyText)
+                        .foregroundColor(.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, Spacing.screenPadding)
             .padding(.vertical, Spacing.md)
@@ -188,6 +187,7 @@ struct SortSheetView: View {
                 ForEach(Array(options.enumerated()), id: \.element.id) { index, option in
                     Button {
                         selectedOption = option
+                        dismiss()
                     } label: {
                         HStack {
                             Text(option.rawValue)

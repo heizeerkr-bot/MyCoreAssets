@@ -66,7 +66,6 @@ enum ValuationLevel: String, CaseIterable {
 }
 
 enum DashboardSortOption: String, CaseIterable, Identifiable {
-    case defaultOrder = "默认排序"
     case positionHighToLow = "仓位从高到低"
     case deviationHighToLow = "仓位偏离目标从大到小"
     case undervaluedFirst = "估值低估优先"
