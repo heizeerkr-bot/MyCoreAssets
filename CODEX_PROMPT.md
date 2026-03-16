@@ -77,7 +77,7 @@ Color.valuationRed        // #E53935 极度高估
 
 // 字体
 Font.superLargeTitle  // 36pt bold rounded（总资产）
-Font.assetPrice       // 28pt semibold（价格）
+Font.assetPrice       // 26pt semibold（价格）
 Font.positionPercent  // 22pt bold rounded（仓位%）
 Font.sectionTitle     // 18pt semibold（卡片标题）
 Font.bodyText         // 16pt regular
@@ -211,8 +211,8 @@ class Portfolio {
 
 已有 Demo 代码，需改为从 SwiftData 读真实数据：
 - 总览卡片：总资产（所有资产 CNY 市值 + 剩余现金）、盈亏、已投入、剩余现金
-- 资产卡片只显示：资产名称+代码+市场、当前价格、仓位(%)+目标仓位(%)+偏离提示、估值状态
-- 不显示：成本、市值、盈亏（这些在详情页展示）
+- 资产卡片只显示：资产名称+市场、当前价格（26pt大字号）、仓位(%)+目标仓位(%)+偏离提示、估值状态
+- 不显示：代码(symbol)、成本、市值、盈亏（这些在详情页展示）
 - 点击卡片进入详情页
 - 资产列表：@Query 获取所有 Asset
 - 排序功能：3 种排序方式（选择即生效并关闭弹窗，无需确认按钮）

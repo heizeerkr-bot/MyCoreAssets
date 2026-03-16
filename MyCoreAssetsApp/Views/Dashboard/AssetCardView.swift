@@ -43,21 +43,11 @@ struct AssetCardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    HStack(spacing: Spacing.sm) {
-                        Text(asset.name)
-                            .font(.sectionTitle)
-                            .foregroundColor(.textPrimary)
-
-                        Text(asset.symbol)
-                            .font(.smallCaption)
-                            .foregroundColor(.textTertiary)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, Spacing.xs)
-                            .background(Color.pageBg)
-                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                    }
+                    Text(asset.name)
+                        .font(.sectionTitle)
+                        .foregroundColor(.textPrimary)
 
                     HStack(spacing: Spacing.xs) {
                         Text(asset.marketDisplayName)
@@ -77,7 +67,7 @@ struct AssetCardView: View {
                 Spacer()
 
                 Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
-                    .font(.sectionTitle)
+                    .font(.assetPrice)
                     .foregroundColor(.textPrimary)
             }
 

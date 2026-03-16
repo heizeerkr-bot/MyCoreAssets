@@ -59,7 +59,7 @@ extension Color {
 
 extension Font {
     static let superLargeTitle = Font.system(size: 36, weight: .bold, design: .rounded)
-    static let assetPrice = Font.system(size: 28, weight: .semibold)
+    static let assetPrice = Font.system(size: 26, weight: .semibold)
     static let positionPercent = Font.system(size: 22, weight: .bold, design: .rounded)
     static let sectionTitle = Font.system(size: 18, weight: .semibold)
     static let bodyText = Font.system(size: 16, weight: .regular)
