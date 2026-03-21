@@ -141,13 +141,13 @@ struct PositionBar: View {
 
                 Rectangle()
                     .fill(Color.textTertiary)
-                    .frame(width: 2, height: Spacing.md)
+                    .frame(width: Spacing.sm / Spacing.xs, height: Spacing.md)
                     .offset(x: CGFloat(target) * scale)
 
                 if let max {
                     Rectangle()
                         .fill(Color.valuationRed.opacity(0.6))
-                        .frame(width: 2, height: Spacing.md)
+                        .frame(width: Spacing.sm / Spacing.xs, height: Spacing.md)
                         .offset(x: CGFloat(max) * scale)
                 }
             }

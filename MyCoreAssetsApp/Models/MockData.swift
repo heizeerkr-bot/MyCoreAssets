@@ -109,11 +109,14 @@ enum AppNumberFormat {
     }
 
     static func priceString(_ price: Double, currency: String, market: String) -> String {
+        let isCrypto = market == MarketCode.btc.rawValue
+        if isCrypto && price < 1 {
+            return String(format: "%.4f", price)
+        }
         if price >= 10000 {
             return wholeString(price)
         }
-        let isCrypto = currency == "USD" && market == MarketCode.btc.rawValue
-        return String(format: isCrypto ? "%.4f" : "%.2f", price)
+        return String(format: "%.2f", price)
     }
 
     static func quantityString(_ quantity: Double) -> String {
@@ -137,11 +140,21 @@ enum AppDateFormat {
         return f
     }()
 
+    static let dateOnly: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     static func timeString(_ date: Date) -> String {
         time.string(from: date)
     }
 
     static func dateTimeString(_ date: Date) -> String {
         dateTime.string(from: date)
+    }
+
+    static func dateOnlyString(_ date: Date) -> String {
+        dateOnly.string(from: date)
     }
 }

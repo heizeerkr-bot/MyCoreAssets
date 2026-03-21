@@ -19,7 +19,7 @@ struct PortfolioSummaryCard: View {
                 .font(.caption)
                 .foregroundColor(.cardBg.opacity(0.8))
 
-            Text("¥ \(AppNumberFormat.wholeString(totalValue))")
+            Text("¥\(AppNumberFormat.wholeString(totalValue))")
                 .font(.superLargeTitle)
                 .foregroundColor(.cardBg)
 
@@ -41,7 +41,7 @@ struct PortfolioSummaryCard: View {
                     Text("已投入")
                         .font(.smallCaption)
                         .foregroundColor(.cardBg.opacity(0.7))
-                    Text("¥ \(formatNumber(totalInvested))")
+                    Text("¥\(formatNumber(totalInvested))")
                         .font(.bodyText)
                         .foregroundColor(.cardBg)
                 }
@@ -52,7 +52,7 @@ struct PortfolioSummaryCard: View {
                     Text("剩余现金")
                         .font(.smallCaption)
                         .foregroundColor(.cardBg.opacity(0.7))
-                    Text("¥ \(formatNumber(remainingCash))")
+                    Text("¥\(formatNumber(remainingCash))")
                         .font(.bodyText)
                         .foregroundColor(.cardBg)
                 }

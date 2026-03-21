@@ -219,7 +219,7 @@ class Portfolio {
   - 仓位从高到低
   - 仓位偏离目标从大到小（推荐）
   - 估值低估优先
-- 下拉/按钮刷新价格
+- 刷新：进入看板自动刷新 + 每 10 秒自动刷新（静默） + 下拉/按钮手动刷新（失败提示）
 
 ### 模块 4：资产详情页 ✅ 已完成
 
@@ -246,35 +246,174 @@ class Portfolio {
 - 实时计算买入/卖出后仓位变化
 - 超出上限时红色警示 + 二次确认
 
+**按钮颜色语义：**
+- 买入确认按钮：`Color.themePrimary`（蓝色）
+- 卖出确认按钮：`Color.lossRed`（红色，语义化：卖出=红色）
+
 ### 模块 6：交易记录页
 
-- 全部交易按时间倒序
-- 区分买入（绿色标签）/ 卖出（红色标签）
-- 展示：时间、资产名、价格、数量、金额
+Tab "记录" 的主页面。
+
+**页面结构：**
+- NavigationStack，navigationTitle("交易记录")
+- `@Query(sort: \Transaction.occurredAt, order: .reverse)` 获取全部交易
+- 按日期分组显示（Section header = "2026-03-18" 格式）
+
+**每条记录行布局：**
+```
+┌─────────────────────────────────────┐
+│ 贵州茅台  [买入]          ¥168,000  │  ← 第一行：名称+标签+金额
+│ ¥1,680 × 100              14:35   │  ← 第二行：价格×数量+时间
+└─────────────────────────────────────┘
+```
+- 第一行左：资产名（bodyText） + 买入(绿标签)/卖出(红标签)
+- 第一行右：金额（bodyText，原币种，千分位格式）
+- 第二行左：价格 × 数量（caption，textSecondary）
+- 第二行右：时间 HH:mm（caption，textTertiary）
+- 买入标签色 = `Color.valuationDeepGreen`，卖出 = `Color.valuationRed`
+
+**交互：**
+- 点击行不跳转（MVP 不做编辑/删除交易）
+- 行样式参考 AssetDetailView 中 AssetTransactionListView 的设计
+
+**空状态：**
+- 无交易时显示居中插图 + "暂无交易记录" + "前往看板查看资产详情" 按钮
+- 按钮跳转到看板 Tab（Tab 0，让用户从看板进入资产详情页交易）
 
 ### 模块 7：资产管理页
 
-- 资产列表（可添加/编辑/删除）
-- 添加资产：搜索 + 常关注列表
-- 编辑资产：理想买入/卖出价、目标仓位、仓位上限、备注
+Tab "资产" 的主页面。
+
+**页面结构：**
+- NavigationStack，navigationTitle("资产管理")
+- `@Query(sort: \Asset.sortOrder)` 获取全部资产
+- 右上角 toolbar `.navigationBarTrailing` 添加 "+" 按钮
+
+**列表每行布局：**
+```
+┌─────────────────────────────────────┐
+│ 🟢 贵州茅台     A股    目标 30%     │
+└─────────────────────────────────────┘
+```
+- 左侧：估值色点（6pt 圆形，用 asset.valuationLevel.color）+ 资产名（bodyText）
+- 中间：市场标签（smallCaption，浅灰背景小圆角）
+- 右侧："目标 X%"（caption，textSecondary）
+
+**添加资产：**
+- "+" 按钮 → `.sheet` 弹出 AssetSearchView（**复用** `Views/Setup/AssetSearchView.swift`）
+- AssetSearchView 需要小幅改造：接受 `@Binding var selectedSymbols: Set<String>` 或回调闭包
+- 选中资产后创建 Asset 对象（设置默认值：idealBuyPrice=0, idealSellPrice=0, targetPositionRatio=0）
+- dismiss 后自动 push 到 AssetEditView 让用户填写估值和仓位
+
+**编辑资产：**
+- 点击列表行 → NavigationLink push 到 AssetEditView
+
+**AssetEditView**（新建 `Views/Asset/AssetEditView.swift`）：
+- 接收 `Asset` 对象
+- Form 布局，Section 分组：
+  - Section "基本信息"：名称(只读 Text)、代码(只读)、市场(只读)
+  - Section "估值设置"：理想买入价 TextField(.decimalPad)、理想卖出价 TextField(.decimalPad)
+  - Section "仓位设置"：目标仓位% TextField(.decimalPad)、仓位上限% TextField(.decimalPad，可选）
+  - Section "备注"：TextEditor 多行输入
+- `navigationBarTitleDisplayMode(.inline)`，title = asset.name
+- 修改直接写入 @Model（SwiftData 实时绑定）
+- toolbar 右上角 "完成" 按钮：点击后 `modelContext.save()` + 显示 "已保存" toast + 1 秒后 dismiss
+- toast 样式：底部居中，深色半透明背景圆角标签，带淡入淡出动画
+- 所有 Section 加 `.listRowBackground(Color.cardBg)` 统一行背景
+
+**删除资产：**
+- 列表支持左滑删除 `.onDelete`
+- 删除前弹出 `.confirmationDialog` 确认
+- 删除后关联 Transaction 自动级联删除（@Relationship deleteRule .cascade）
 
 ### 模块 8：设置页
 
-- 修改初始资金
-- 刷新策略（开盘 5 分钟 / 其他 1 小时）
-- App 版本信息
+Tab "我的" 的主页面。
 
-### 模块 9：价格刷新
+**页面结构：**
+- NavigationStack，navigationTitle("我的")
+- Form 布局，3 个 Section
 
-- URLSession 获取行情（先实现 1-2 个数据源适配器）
-- 汇率服务（CNY/HKD/USD）
-- 刷新策略：开盘每 5 分钟，非开盘每 1 小时
-- 失败时提示错误 + 重试
+**Section "资金管理"：**
+- "初始资金" 行：左侧标题，右侧显示当前值（千分位格式）
+- 点击弹出 `.alert` + TextField 修改 `portfolio.initialCashCNY`
+- 修改后同步调整 `currentCashCNY`：`currentCashCNY += (新初始资金 - 旧初始资金)`
+
+**Section "数据刷新"：**
+- "刷新策略" 行：左侧标题，右侧 caption 灰色文字
+- 显示说明："开盘时段每 5 分钟，其他时段每 1 小时"
+- MVP 仅展示，不可修改
+
+**Section "关于"：**
+- "版本" 行：左侧 "版本"，右侧显示 `Bundle.main.infoDictionary` 中的 version + build
+- 样式：右侧文字用 textSecondary
+
+### 模块 9：价格刷新（真实 API + Mock 降级）✅ 已完成
+
+接入免费行情 API 获取真实价格，单个失败时跳过，全部失败时降级 Mock。
+
+**Services/ 目录文件：**
+
+| 文件 | 说明 |
+|------|------|
+| `PriceServiceProtocol.swift` | Protocol 接口 + PriceServiceError 枚举 |
+| `RealPriceService.swift` | 真实 API 实现（腾讯/Yahoo/Binance/天天基金） |
+| `MockPriceService.swift` | Mock 降级备用（随机 ±2%） |
+| `ForexServiceProtocol.swift` | 汇率 Protocol |
+| `StaticForexService.swift` | 静态汇率（MVP 够用） |
+
+**RealPriceService 按 market 分发到不同 API：**
+
+| Market | 主源 | 兜底 | 价格提取 |
+|--------|------|------|----------|
+| CN | 腾讯行情 web.sqt.gtimg.cn | Yahoo（000333.SZ / 600519.SS） | 波浪号分隔 index 3，GB18030 优先解码 |
+| HK | 腾讯行情 web.sqt.gtimg.cn | Yahoo（0700.HK） | 波浪号分隔 index 3，GB18030 优先解码 |
+| US | Yahoo Finance v8 | — | JSON: `chart.result[0].meta.regularMarketPrice` |
+| BTC | Binance data-api | — | JSON: `price` (string→Double) |
+| FUND | 天天基金 fundgz | — | JSONP 提取 `gsz` |
+
+**关键实现细节：**
+
+1. **CN 市场 prefix 规则**：symbol 以 `6` 开头 → `"sh"`，以 `0` 或 `3` 开头 → `"sz"`
+2. **腾讯行情编码**：返回内容按 GB18030 优先解码，回退 UTF-8，解决 A 股中文乱码导致价格解析失败
+3. **HK 市场符号**：直接拼 `hk` 前缀，如 `00700` → `hk00700`
+4. **Binance 加密货币**：symbol 自动拼接 `USDT` 后缀，如 `BTC` → `BTCUSDT`
+
+**网络稳健性：**
+- 统一请求配置：`timeout = 10s`、`cachePolicy = reloadIgnoringLocalAndRemoteCacheData`、`User-Agent`
+- 重试：最多 2 次（取消场景重试一次）
+- 请求执行方式：`dataTask + continuation`，减少 UI 任务取消对网络请求的连带中断
+- URLSession 使用 static 单例，避免临时实例被 ARC 释放
+
+**降级策略：**
+- 单个资产 API 调用失败 → 跳过该资产，不更新价格，`print()` 记录错误
+- 不阻塞其他资产更新（用 `TaskGroup` 并发请求）
+- A 股/港股主源（腾讯）失败时自动尝试兜底源（Yahoo）
+- 全部资产都失败 → 降级为 MockPriceService
+- 手动刷新降级时弹提示"真实行情获取失败，已使用模拟价格"
+- 自动刷新降级时静默，不打扰用户
+
+**刷新触发机制（DashboardView）：**
+- 统一入口：`triggerRefresh(source:showMessage:)` 管理所有刷新请求
+- `@State refreshTask` 防重入，同一时刻只允许一个刷新任务
+- `.refreshable` 不直接 await 网络，而是触发独立 Task，避免被 SwiftUI 取消
+- 手动刷新（button/pull）：`showMessage=true`，失败时弹提示
+- 自动刷新（auto-initial/auto-10s）：`showMessage=false`，静默执行
+- 自动刷新通过 `.task(id: selectedTab)` 实现，仅在 `selectedTab == 0` 时运行
+
+**取消错误识别（-999）：**
+- `CancellationError`、`URLError.cancelled`、`NSError(NSURLErrorDomain, -999)` 统一识别为"请求被取消"
+- 取消不按 API 失败处理，不触发 Mock 降级
+
+**调试日志（DEBUG 模式）：**
+- `[Dashboard]` 日志：刷新触发来源（button/pull/auto-initial/auto-10s）、刷新结果、更新资产数量
+- `[PriceService]` 日志：请求 URL、HTTP 状态、取消/失败原因、解析结果
 
 ### 模块 10：空状态
 
-- Dashboard 无资产时：插图 + "添加第一个核心资产" 按钮
-- 交易记录无数据时：插图 + "记录第一笔交易" 按钮
+- Dashboard 无资产时：插图 + "添加第一个核心资产" 按钮（跳转资产 Tab）
+- 交易记录无数据时：插图 + "前往看板查看资产详情" 按钮（跳转看板 Tab 0）
+- 资产管理无资产时：插图 + "添加第一个核心资产" 按钮（打开搜索 Sheet）
 
 ---
 
@@ -362,3 +501,5 @@ Tab 选中色：`Color.themePrimary`
 4. **SwiftData @Model 类的属性不要用 let**，必须用 var
 5. **金额格式化**统一用 NumberFormatter（千分位分隔）
 6. **MVP 阶段不做**：分红/摊薄成本、智能操作建议（只显示仓位偏离数值）、云同步、筛选功能
+7. **Form 页面统一加 `.listRowBackground(Color.cardBg)`**（AssetEditView、SettingsView、AssetListManageView 的 List 行都需要），配合 `.scrollContentBackground(.hidden)` + `.background(Color.pageBg)` 保持主题一致
+8. **BTC 价格格式化**：价格 < 1 时用 4 位小数，≥ 10000 时用整数，其余用 2 位小数（不按币种判断，按 market == BTC 判断）

@@ -23,6 +23,17 @@
 		A1B2C3D4E5F60001000A000E /* PresetAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A000E /* PresetAssets.swift */; };
 		A1B2C3D4E5F60001000A000F /* InitialSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A000F /* InitialSetupView.swift */; };
 		A1B2C3D4E5F60001000A0010 /* AssetSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0010 /* AssetSearchView.swift */; };
+		A1B2C3D4E5F60001000A0011 /* PriceServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0011 /* PriceServiceProtocol.swift */; };
+		A1B2C3D4E5F60001000A0012 /* RealPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */; };
+		A1B2C3D4E5F60001000A0013 /* MockPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */; };
+		A1B2C3D4E5F60001000A0014 /* ForexServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */; };
+		A1B2C3D4E5F60001000A0015 /* StaticForexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */; };
+		A1B2C3D4E5F60001000A0016 /* BuyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0016 /* BuyView.swift */; };
+		A1B2C3D4E5F60001000A0017 /* SellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0017 /* SellView.swift */; };
+		A1B2C3D4E5F60001000A0018 /* TransactionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0018 /* TransactionHistoryView.swift */; };
+		A1B2C3D4E5F60001000A0019 /* AssetListManageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0019 /* AssetListManageView.swift */; };
+		A1B2C3D4E5F60001000A001A /* AssetEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001A /* AssetEditView.swift */; };
+		A1B2C3D4E5F60001000A001B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001B /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +53,17 @@
 		A1B2C3D4E5F60002000A000E /* PresetAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetAssets.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A000F /* InitialSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialSetupView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0010 /* AssetSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetSearchView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0011 /* PriceServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceServiceProtocol.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealPriceService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPriceService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForexServiceProtocol.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaticForexService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0016 /* BuyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0017 /* SellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0018 /* TransactionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionHistoryView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0019 /* AssetListManageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetListManageView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001A /* AssetEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetEditView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60003000A0001 /* MyCoreAssetsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyCoreAssetsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -69,6 +91,7 @@
 			children = (
 				A1B2C3D4E5F60002000A0001 /* MyCoreAssetsApp.swift */,
 				A1B2C3D4E5F60005000A0003 /* Models */,
+				A1B2C3D4E5F60005000A000C /* Services */,
 				A1B2C3D4E5F60005000A0004 /* Theme */,
 				A1B2C3D4E5F60005000A0005 /* Views */,
 				A1B2C3D4E5F60002000A0009 /* Assets.xcassets */,
@@ -103,6 +126,10 @@
 				A1B2C3D4E5F60005000A0006 /* Dashboard */,
 				A1B2C3D4E5F60005000A0007 /* Detail */,
 				A1B2C3D4E5F60005000A000B /* Setup */,
+				A1B2C3D4E5F60005000A000D /* Trade */,
+				A1B2C3D4E5F60005000A000E /* Asset */,
+				A1B2C3D4E5F60005000A000F /* History */,
+				A1B2C3D4E5F60005000A0010 /* Settings */,
 				A1B2C3D4E5F60005000A0008 /* Placeholder */,
 			);
 			path = Views;
@@ -141,6 +168,52 @@
 				A1B2C3D4E5F60002000A0010 /* AssetSearchView.swift */,
 			);
 			path = Setup;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A000C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A0011 /* PriceServiceProtocol.swift */,
+				A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */,
+				A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */,
+				A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */,
+				A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A000D /* Trade */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A0016 /* BuyView.swift */,
+				A1B2C3D4E5F60002000A0017 /* SellView.swift */,
+			);
+			path = Trade;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A000E /* Asset */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A0019 /* AssetListManageView.swift */,
+				A1B2C3D4E5F60002000A001A /* AssetEditView.swift */,
+			);
+			path = Asset;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A000F /* History */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A0018 /* TransactionHistoryView.swift */,
+			);
+			path = History;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A0010 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A001B /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4E5F60005000A0009 /* Preview Content */ = {
@@ -243,6 +316,17 @@
 				A1B2C3D4E5F60001000A000E /* PresetAssets.swift in Sources */,
 				A1B2C3D4E5F60001000A000F /* InitialSetupView.swift in Sources */,
 				A1B2C3D4E5F60001000A0010 /* AssetSearchView.swift in Sources */,
+				A1B2C3D4E5F60001000A0011 /* PriceServiceProtocol.swift in Sources */,
+				A1B2C3D4E5F60001000A0012 /* RealPriceService.swift in Sources */,
+				A1B2C3D4E5F60001000A0013 /* MockPriceService.swift in Sources */,
+				A1B2C3D4E5F60001000A0014 /* ForexServiceProtocol.swift in Sources */,
+				A1B2C3D4E5F60001000A0015 /* StaticForexService.swift in Sources */,
+				A1B2C3D4E5F60001000A0016 /* BuyView.swift in Sources */,
+				A1B2C3D4E5F60001000A0017 /* SellView.swift in Sources */,
+				A1B2C3D4E5F60001000A0018 /* TransactionHistoryView.swift in Sources */,
+				A1B2C3D4E5F60001000A0019 /* AssetListManageView.swift in Sources */,
+				A1B2C3D4E5F60001000A001A /* AssetEditView.swift in Sources */,
+				A1B2C3D4E5F60001000A001B /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -379,11 +463,7 @@
 				DEVELOPMENT_TEAM = 8QALU472K8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_FILE = MyCoreAssetsApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -408,11 +488,7 @@
 				DEVELOPMENT_TEAM = 8QALU472K8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_FILE = MyCoreAssetsApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

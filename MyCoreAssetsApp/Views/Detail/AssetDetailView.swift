@@ -6,6 +6,8 @@ struct AssetDetailView: View {
     let totalPortfolioValueCNY: Double
 
     @Query(sort: \Transaction.occurredAt, order: .reverse) private var transactions: [Transaction]
+    @State private var showingBuySheet = false
+    @State private var showingSellSheet = false
 
     private var assetTransactions: [Transaction] {
         transactions.filter { $0.asset?.id == asset.id }
@@ -45,6 +47,12 @@ struct AssetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             bottomActionBar
+        }
+        .sheet(isPresented: $showingBuySheet) {
+            BuyView(asset: asset)
+        }
+        .sheet(isPresented: $showingSellSheet) {
+            SellView(asset: asset)
         }
     }
 
@@ -252,7 +260,7 @@ struct AssetDetailView: View {
     private var bottomActionBar: some View {
         HStack(spacing: Spacing.md) {
             Button {
-                // 模块 5 实现交易逻辑
+                showingBuySheet = true
             } label: {
                 Text("买入")
                     .font(.bodyText)
@@ -265,7 +273,7 @@ struct AssetDetailView: View {
             .buttonStyle(.plain)
 
             Button {
-                // 模块 5 实现交易逻辑
+                showingSellSheet = true
             } label: {
                 Text("卖出")
                     .font(.bodyText)

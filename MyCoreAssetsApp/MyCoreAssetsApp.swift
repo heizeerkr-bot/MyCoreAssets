@@ -6,6 +6,7 @@ struct MyCoreAssetsApp: App {
     var body: some Scene {
         WindowGroup {
             ContentRootView()
+                .preferredColorScheme(.light)
         }
         .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self])
     }
@@ -51,28 +52,28 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView()
+            DashboardView(selectedTab: $selectedTab)
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("看板")
                 }
                 .tag(0)
 
-            PlaceholderTabView("资产管理", icon: "chart.pie.fill", description: "第一批先完成初始化、看板和详情页")
+            AssetListManageView()
                 .tabItem {
                     Image(systemName: "chart.pie.fill")
                     Text("资产")
                 }
                 .tag(1)
 
-            PlaceholderTabView("交易记录", icon: "list.bullet.rectangle", description: "第一批后续接入完整交易记录页")
+            TransactionHistoryView(selectedTab: $selectedTab)
                 .tabItem {
                     Image(systemName: "list.bullet.rectangle")
                     Text("记录")
                 }
                 .tag(2)
 
-            PlaceholderTabView("设置", icon: "person.fill", description: "初始资金、刷新策略等")
+            SettingsView()
                 .tabItem {
                     Image(systemName: "person.fill")
                     Text("我的")
