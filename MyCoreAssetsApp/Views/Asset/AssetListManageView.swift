@@ -2,8 +2,10 @@ import SwiftData
 import SwiftUI
 
 struct AssetListManageView: View {
+    @Binding var autoShowSearch: Bool
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Asset.sortOrder) private var assets: [Asset]
+    @Query(sort: \Portfolio.id) private var portfolios: [Portfolio]
 
     @State private var path: [UUID] = []
     @State private var showingSearch = false
@@ -11,16 +13,20 @@ struct AssetListManageView: View {
     @State private var deleteTargets: [Asset] = []
     @State private var showingDeleteConfirm = false
 
+    private var portfolio: Portfolio? { portfolios.first }
+
     var body: some View {
         NavigationStack(path: $path) {
             Group {
                 if assets.isEmpty {
                     emptyState
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.systemBackground))
                 } else {
                     assetList
+                        .background(Color.pageBg)
                 }
             }
-            .background(Color.pageBg)
             .navigationTitle("资产管理")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,11 +49,21 @@ struct AssetListManageView: View {
                     AssetEditView(asset: asset)
                 }
             }
-            .confirmationDialog("确认删除所选资产？", isPresented: $showingDeleteConfirm) {
+            .alert("确认删除", isPresented: $showingDeleteConfirm) {
                 Button("删除", role: .destructive) {
                     deleteSelectedAssets()
                 }
                 Button("取消", role: .cancel) {}
+            } message: {
+                if let name = deleteTargets.first?.name {
+                    Text("确定删除「\(name)」吗？关联的交易记录将一并删除。")
+                }
+            }
+            .onChange(of: autoShowSearch) { _, newValue in
+                if newValue {
+                    showingSearch = true
+                    autoShowSearch = false
+                }
             }
         }
     }
@@ -82,13 +98,18 @@ struct AssetListManageView: View {
                             .foregroundColor(.textSecondary)
                     }
                     .padding(.vertical, Spacing.xs)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-            .listRowBackground(Color.cardBg)
-            }
-            .onDelete { offsets in
-                deleteTargets = offsets.map { assets[$0] }
-                showingDeleteConfirm = !deleteTargets.isEmpty
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        deleteTargets = [asset]
+                        showingDeleteConfirm = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                }
+                .listRowBackground(Color.cardBg)
             }
         }
         .listStyle(.plain)
@@ -166,7 +187,19 @@ struct AssetListManageView: View {
     }
 
     private func deleteSelectedAssets() {
+        guard let portfolio else { return }
         for asset in deleteTargets {
+            // Restore cash: reverse all transactions for this asset
+            var cashToRestore: Double = 0
+            for transaction in asset.transactions {
+                let amount = transaction.cnyAmount ?? 0
+                if transaction.tradeType == .buy {
+                    cashToRestore += amount   // buy deducted cash, restore it
+                } else {
+                    cashToRestore -= amount   // sell added cash, take it back
+                }
+            }
+            portfolio.currentCashCNY += cashToRestore
             modelContext.delete(asset)
         }
         try? modelContext.save()
@@ -175,6 +208,7 @@ struct AssetListManageView: View {
 }
 
 #Preview {
-    AssetListManageView()
+    @Previewable @State var autoSearch = false
+    AssetListManageView(autoShowSearch: $autoSearch)
         .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self], inMemory: true)
 }

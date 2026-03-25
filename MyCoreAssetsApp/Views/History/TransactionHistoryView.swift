@@ -19,11 +19,13 @@ struct TransactionHistoryView: View {
             Group {
                 if transactions.isEmpty {
                     emptyState
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.systemBackground))
                 } else {
                     historyList
+                        .background(Color.pageBg)
                 }
             }
-            .background(Color.pageBg)
             .navigationTitle("交易记录")
             .navigationBarTitleDisplayMode(.inline)
         }

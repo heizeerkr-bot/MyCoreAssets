@@ -49,17 +49,18 @@ struct ContentRootView: View {
 
 struct MainTabView: View {
     @Binding var selectedTab: Int
+    @State private var shouldAutoAddAsset = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView(selectedTab: $selectedTab)
+            DashboardView(selectedTab: $selectedTab, shouldAutoAddAsset: $shouldAutoAddAsset)
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("看板")
                 }
                 .tag(0)
 
-            AssetListManageView()
+            AssetListManageView(autoShowSearch: $shouldAutoAddAsset)
                 .tabItem {
                     Image(systemName: "chart.pie.fill")
                     Text("资产")

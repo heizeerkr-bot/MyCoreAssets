@@ -4,6 +4,7 @@ import SwiftData
 
 struct DashboardView: View {
     @Binding var selectedTab: Int
+    @Binding var shouldAutoAddAsset: Bool
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Asset.sortOrder) private var assets: [Asset]
     @Query(sort: \Portfolio.id) private var portfolios: [Portfolio]
@@ -166,6 +167,7 @@ struct DashboardView: View {
                 .font(.caption)
                 .foregroundColor(.textSecondary)
             Button {
+                shouldAutoAddAsset = true
                 selectedTab = 1
             } label: {
                 Text("添加第一个核心资产")
@@ -358,6 +360,7 @@ struct SortSheetView: View {
 
 #Preview {
     @Previewable @State var selected = 0
-    DashboardView(selectedTab: $selected)
+    @Previewable @State var autoAdd = false
+    DashboardView(selectedTab: $selected, shouldAutoAddAsset: $autoAdd)
         .modelContainer(for: [Portfolio.self, Asset.self, Transaction.self], inMemory: true)
 }
