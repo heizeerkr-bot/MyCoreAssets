@@ -106,27 +106,37 @@ MyCoreAssetsApp/
 │   ├── Portfolio.swift             ← SwiftData @Model
 │   └── PresetAssets.swift          ← Top100 + 常关注 15 个 JSON
 ├── Services/
-│   ├── PriceService.swift          ← 行情获取
-│   └── ForexService.swift          ← 汇率获取
+│   ├── PriceServiceProtocol.swift
+│   ├── RealPriceService.swift           ← 行情获取（多源）
+│   ├── MockPriceService.swift           ← Mock 降级
+│   ├── ForexServiceProtocol.swift
+│   ├── StaticForexService.swift         ← 静态汇率
+│   ├── NotificationService.swift        ← V1.2 本地通知（4 种 AlertType）
+│   ├── DividendServiceProtocol.swift    ← V1.3 分红/拆股事件 Protocol
+│   └── RealDividendService.swift        ← V1.3 多市场分红检测 + Detector
 ├── Views/
 │   ├── Dashboard/
 │   │   ├── DashboardView.swift
 │   │   ├── PortfolioSummaryCard.swift
 │   │   └── AssetCardView.swift
 │   ├── Detail/
-│   │   └── AssetDetailView.swift
+│   │   └── AssetDetailView.swift        ← V1.3 加 pendingEventsCard + 3-button bar
 │   ├── Setup/
-│   │   ├── InitialSetupView.swift  ← 4步向导
+│   │   ├── InitialSetupView.swift       ← 4步向导（V1.1 后两步可跳过、第 2 步可零选）
 │   │   └── AssetSearchView.swift
 │   ├── Trade/
 │   │   ├── BuyView.swift
-│   │   └── SellView.swift
+│   │   ├── SellView.swift
+│   │   ├── DividendRecordView.swift     ← V1.3 现金分红录入
+│   │   ├── SplitRecordView.swift        ← V1.3 拆股录入
+│   │   ├── BonusShareRecordView.swift   ← V1.3 送股录入（仅手动）
+│   │   └── RightsRecordView.swift       ← V1.3 配股录入（仅手动）
 │   ├── Asset/
 │   │   └── AssetEditView.swift
 │   ├── History/
 │   │   └── TransactionHistoryView.swift
 │   └── Settings/
-│       └── SettingsView.swift
+│       └── SettingsView.swift           ← V1.2 加"通知" section
 └── Assets.xcassets
 ```
 
@@ -142,7 +152,7 @@ MyCoreAssetsApp/
 
 ## 功能模块（按实现优先级）
 
-> **模块 1-4 已完成并通过 review，代码已在项目中。第二批请从模块 5 开始。**
+> **当前状态（2026-04-25）：模块 1-13 全部已完成。** 模块 1-10 是 V1.0 主体；模块 11 是 V1.2 通知；模块 12-13 是 V1.3 分红/拆股相关。所有变更已上 main 分支。下一步是 UI 美化整体 pass（不是新功能）。
 
 ### 模块 1：SwiftData 数据层 ✅ 已完成
 
@@ -155,17 +165,23 @@ class Asset {
     var symbol: String
     var market: String          // "CN" / "HK" / "US" / "BTC" / "FUND"
     var currency: String        // "CNY" / "HKD" / "USD"
-    var idealBuyPrice: Double   // 原币种
-    var idealSellPrice: Double  // 原币种
+    var idealBuyPrice: Double   // 原币种（0 = 未设置，V1.1 不再强制）
+    var idealSellPrice: Double  // 原币种（0 = 未设置）
     var currentPrice: Double    // 原币种，自动更新
     var lastPriceUpdatedAt: Date?
     var holdingQuantity: Double
     var averageCost: Double     // 原币种
-    var targetPositionRatio: Double  // 目标仓位 %
+    var targetPositionRatio: Double  // 目标仓位 %（0 = 未设置）
     var maxPositionRatio: Double?    // 仓位上限 %，可选
     var isWatched: Bool
     var notes: String?
     var sortOrder: Int          // 默认排序顺序
+    var alertStateJSON: String? // V1.2 通知防抖：[AlertType.rawValue: Date] JSON
+    var lastDividendCheckAt: Date?  // V1.3 上次分红检测时间，24h 缓存
+
+    // V1.1 计算属性（统一空值判断）
+    var hasValuationConfigured: Bool  // idealBuy > 0 && idealSell > 0 && sell > buy
+    var hasTargetPosition: Bool       // targetPositionRatio > 0
 }
 ```
 
@@ -175,14 +191,25 @@ class Asset {
 class Transaction {
     var id: UUID
     var asset: Asset?           // 关联
-    var type: String            // "BUY" / "SELL"
-    var price: Double           // 原币种
-    var quantity: Double
+    var type: String            // V1.3 起：BUY/SELL/DIVIDEND/SPLIT/BONUS_SHARE/RIGHTS_ISSUE
+    var price: Double           // 原币种（语义按 type 复用）
+    var quantity: Double        // （语义按 type 复用）
     var occurredAt: Date
     var fxRateUsed: Double?     // 交易时汇率
-    var cnyAmount: Double?      // 折算人民币
+    var cnyAmount: Double?      // 折算人民币（DIVIDEND 入账正、RIGHTS_ISSUE 流出负）
 }
 ```
+
+**V1.3 Transaction 字段语义复用表：**
+
+| Type | price | quantity | cnyAmount | occurredAt |
+|---|---|---|---|---|
+| BUY | 买入价 | 买入数量 | 总金额（正） | 交易时间 |
+| SELL | 卖出价 | 卖出数量 | 总金额（正） | 交易时间 |
+| DIVIDEND | 每股股息 | ex-date 持仓数 | 总现金（正） | ex-date |
+| SPLIT | 拆股比率（2.0=1:2） | 拆出净增量 | 0 | ex-date |
+| BONUS_SHARE | 送股比率（0.2=10送2） | 送出股数 | 0 | ex-date |
+| RIGHTS_ISSUE | 配股价 | 配股数 | 总现金（负） | 缴款日 |
 
 **Portfolio Model:**
 ```swift
@@ -196,16 +223,18 @@ class Portfolio {
 }
 ```
 
-### 模块 2：初始化向导（4 步） ✅ 已完成
+### 模块 2：初始化向导（4 步） ✅ 已完成（V1.1 / V1.1.1 弹性化）
 
 条件：`Portfolio.hasCompletedSetup == false` 时显示
 
-1. **设置初始资金** — 大输入框 48pt，默认 1,250,000
-2. **添加核心资产** — 搜索框 + 常关注 15 个快捷标签
-3. **设置估值与仓位** — 逐个资产设置理想买入/卖出价 + 目标仓位
-4. **初始化持仓**（可跳过）— 逐个资产录入平均成本 + 持有数量
+1. **设置初始资金** — 大输入框 48pt，默认 1,250,000；唯一**必填**步骤
+2. **添加核心资产** — 搜索框 + 常关注 15 个快捷标签；**可零选**——若不选任何资产，主按钮文案变为"完成初始化"，点击直接结束向导（跳过 step 3、4 因无 per-asset 字段）
+3. **设置估值与仓位（可跳过）** — 逐个资产设置理想买入/卖出价 + 目标仓位；**所有字段非必填**，"已填则需自洽（卖出 > 买入）"。顶部蓝色提示卡告知可整步跳过
+4. **初始化持仓（可跳过）** — 逐个资产录入平均成本 + 持有数量；按钮文案"完成初始化"，点击即结束（无字段=空走）
 
 完成后 `hasCompletedSetup = true`，进入看板。
+
+**V1.1 配套：未设估值/目标仓位的资产在看板/详情页显示弱引导（蓝色提示卡），点击 push 到 AssetEditView 让用户随时补完。**
 
 ### 模块 3：Dashboard 看板 ✅ 已完成
 
@@ -299,11 +328,11 @@ Tab "资产" 的主页面。
 - 中间：市场标签（smallCaption，浅灰背景小圆角）
 - 右侧："目标 X%"（caption，textSecondary）
 
-**添加资产：**
+**添加资产（V1.1 简化）：**
 - "+" 按钮 → `.sheet` 弹出 AssetSearchView（**复用** `Views/Setup/AssetSearchView.swift`）
-- AssetSearchView 需要小幅改造：接受 `@Binding var selectedSymbols: Set<String>` 或回调闭包
-- 选中资产后创建 Asset 对象（设置默认值：idealBuyPrice=0, idealSellPrice=0, targetPositionRatio=0）
-- dismiss 后自动 push 到 AssetEditView 让用户填写估值和仓位
+- 选中资产后创建 Asset 对象（默认值：idealBuyPrice=0, idealSellPrice=0, targetPositionRatio=0）
+- dismiss 后**不再强制 push 到 AssetEditView**；改为底部 toast "已添加 N 个资产，可点击列表项完善估值与仓位"
+- 用户主动点列表行才进入 AssetEditView
 
 **编辑资产：**
 - 点击列表行 → NavigationLink push 到 AssetEditView
@@ -332,7 +361,7 @@ Tab "我的" 的主页面。
 
 **页面结构：**
 - NavigationStack，navigationTitle("我的")
-- Form 布局，3 个 Section
+- Form 布局，4 个 Section（资金管理 / 数据刷新 / 通知 / 关于）
 
 **Section "资金管理"：**
 - "初始资金" 行：左侧标题，右侧显示当前值（千分位格式）
@@ -343,6 +372,14 @@ Tab "我的" 的主页面。
 - "刷新策略" 行：左侧标题，右侧 caption 灰色文字
 - 显示说明："开盘时段每 5 分钟，其他时段每 1 小时"
 - MVP 仅展示，不可修改
+
+**Section "通知"（V1.2）：**
+- "启用通知" 主开关：`@State` 直接绑定 `notificationsEnabled` + `.onChange` 触发 `handleMasterToggle`
+- 首次开启时调 `NotificationService.requestAuthorization()` 请求系统权限
+- 系统层未授予且主开关 ON 时显示警告行 "系统未授予通知权限 / 点击前往系统设置开启" → `UIApplication.openSettingsURLString`
+- 已授予时显示 "发送测试通知" 按钮（调 `sendTestNotification()` 发一条预设通知验链路）
+- footer 一段话说明：「价格跌破理想买入价、突破理想卖出价，或估值进入极度低估/极度高估时会推送提醒；同一资产同类提醒 24 小时内只发一次。」
+- 4 种 AlertType 的子开关 UI **不暴露**（NotificationPrefs.isTypeEnabled 默认 true，底层保留以便未来恢复）
 
 **Section "关于"：**
 - "版本" 行：左侧 "版本"，右侧显示 `Bundle.main.infoDictionary` 中的 version + build
@@ -414,6 +451,90 @@ Tab "我的" 的主页面。
 - Dashboard 无资产时：插图 + "添加第一个核心资产" 按钮（跳转资产 Tab）
 - 交易记录无数据时：插图 + "前往看板查看资产详情" 按钮（跳转看板 Tab 0）
 - 资产管理无资产时：插图 + "添加第一个核心资产" 按钮（打开搜索 Sheet）
+
+### 模块 11：本地通知 ✅ 已完成（V1.2）
+
+价格刷新成功后判断是否跨越关键阈值，跨越则发本地通知。**无需后台刷新**，依赖前台/进看板 10s 自动刷新触发。
+
+**Services/NotificationService.swift：**
+- `final class NotificationService: NSObject, UNUserNotificationCenterDelegate`，单例 `.shared`
+- 实现 `userNotificationCenter(_:willPresent:)` 返回 `[.banner, .list, .sound]` — 让前台也显示 banner
+- 在 `App.init()` 中调 `NotificationService.shared.registerAsDelegate()` 注册 delegate
+- API：`requestAuthorization() async -> Bool`、`scheduleIfAllowed(asset:type:)`、`sendTestNotification()`、`currentAuthorizationStatus()`
+
+**AlertType（4 种）：**
+- `crossedIdealBuy` — `oldPrice > A && newPrice <= A`
+- `crossedIdealSell` — `oldPrice < B && newPrice >= B`
+- `enteredDeepUnder` — `oldLevel != .deepUndervalued && newLevel == .deepUndervalued`
+- `enteredDeepOver` — `oldLevel != .deepOvervalued && newLevel == .deepOvervalued`
+
+**24h 防抖：** `Asset.alertStateJSON` 存 `[AlertType.rawValue: lastSentDate]`，同类 24h 内不重复触发。
+
+**触发位置：** [DashboardView.swift](MyCoreAssetsApp/Views/Dashboard/DashboardView.swift) 的 `refreshPrices()` 在写入新 price 前后捕获 oldPrice/oldLevel，调 `evaluateAlerts(asset:oldPrice:newPrice:oldLevel:newLevel:)` 判断 4 种跨越。
+
+**通知文案：** 见 [NotificationService.swift](MyCoreAssetsApp/Services/NotificationService.swift) 的 `title(for:asset:)` / `body(for:asset:)`。
+
+### 模块 12：分红/拆股自动检测 ✅ 已完成（V1.3）
+
+App 自动拉取每个资产的派息/拆股事件，与本地 Transaction 比对，将未录入的事件作为**候选**显示在资产详情页，用户一键确认才落库。**送股/配股不自动检测**，只通过详情页底部"更多"菜单手动录入。
+
+**Services/DividendServiceProtocol.swift：**
+- `struct DividendEvent { exDate, kind: .cashDividend/.split, amountPerShare, splitRatio }`
+- `protocol DividendServiceProtocol { func fetchEvents(asset:since:) async throws -> [DividendEvent] }`
+
+**Services/RealDividendService.swift（多市场分发 + Detector）：**
+
+| Market | 主源 | 兜底 | 解析 |
+|---|---|---|---|
+| US | Yahoo `chart/{symbol}?events=div%2Csplit&range=5y` | — | `events.dividends`/`events.splits` |
+| HK | Yahoo（symbol → `0000.HK`） | — | 同 US |
+| CN | 东方财富 `datacenter-web/api/data/v1/get?reportName=RPT_LICO_FN_CPD` | 新浪 `CompanyBonusService.getCompanyBonus` | JSON 解析 EX_DIVIDEND_DATE / PRETAX_BONUS_RMB |
+| FUND | 东方财富 `api.fund.eastmoney.com/f10/lsfh/?fundCode=...` | — | LSFHList 数组 |
+| BTC | — | — | 返回空数组 |
+
+复用 RealPriceService 的网络模板（10s timeout、UA 头、dataTask + continuation、-999 取消识别、最多 2 次重试）。
+
+**DividendDetector.detectUnrecorded(asset:)：**
+- 取 asset.transactions 里所有 BUY 的最早 occurredAt 作为 `since`（无 BUY 时用 `.distantPast`）
+- 拉取该 since 起的事件
+- 用 dayKey（YYYY-MM-DD UTC）与本地已记录的 DIVIDEND/SPLIT 交易去重
+- 失败时返回 nil（UI 静默处理）
+
+### 模块 13：分红/拆股/送股/配股录入 ✅ 已完成（V1.3）
+
+**TradeType 扩展（[Models/MockData.swift](MyCoreAssetsApp/Models/MockData.swift)）：**
+
+```swift
+case dividend     = "DIVIDEND"      // 现金分红 → tintColor = .dividendGold
+case split        = "SPLIT"         // 拆股       → tintColor = .splitBlue
+case bonusShare   = "BONUS_SHARE"   // 送股       → tintColor = .bonusPurple
+case rightsIssue  = "RIGHTS_ISSUE"  // 配股       → tintColor = .rightsTeal
+```
+
+**AppTheme 新增颜色：** `dividendGold (#FFA726)`、`splitBlue (#1E88E5)`、`bonusPurple (#8E24AA)`、`rightsTeal (#00897B)`。
+
+**资产详情页改造（[AssetDetailView.swift](MyCoreAssetsApp/Views/Detail/AssetDetailView.swift)）：**
+
+1. **`pendingEventsCard`**（位置：priceCard 之后、positionCard 之前）：
+   - 金色边框 + 浅金背景；标题 "✨ 检测到 N 笔未记录事件"
+   - 列出最多 3 条预览（"现金分红 YYYY-MM-DD / 每股 ¥X.XX"）；超过则显示 "还有 X 笔..."
+   - 单条点击 → 弹对应 sheet 预填值（DividendRecordView / SplitRecordView）
+   - "全部记录" 按钮 → 弹 `.alert` confirm dialog 显示**摘要**（事件数 / 现金净变化 / avgCost 模拟值 / qty 模拟值）→ 用户确认才批量写入
+   - 检测时机：`.task(id: asset.id)` 进入页面时跑 `DividendDetector.detectUnrecorded`
+
+2. **`bottomActionBar` 三按钮：** 买入 / 卖出 / 更多 Menu
+   - 更多 Menu 项：分红 / 拆股 / 送股 / 配股 → 弹对应 sheet（无预填值，纯手动输入）
+
+**4 个新录入 sheet（[Views/Trade/](MyCoreAssetsApp/Views/Trade/)）的应用公式：**
+
+| Sheet | 公式 |
+|---|---|
+| DividendRecordView | `cash += perShare × shares × fxRate`；`averageCost -= perShare`（"摄薄成本"语义） |
+| SplitRecordView | `holdingQuantity *= ratio`；`averageCost /= ratio`；现金不变 |
+| BonusShareRecordView | `bonus = oldQ × ratio`；`newQ = oldQ + bonus`；`averageCost = oldCost × oldQ / newQ`；现金不变 |
+| RightsRecordView | `averageCost = (oldCost × oldQ + price × newQ) / (oldQ + newQ)`；`holdingQuantity += newQ`；`cash -= price × newQ × fxRate` |
+
+每 sheet 的 UI 风格：复用 BuyView 的 inputCard/previewCard/submitButton 模板，预览卡背景色用各自的金/蓝/紫/青 `.opacity(0.08)` 区分。
 
 ---
 
@@ -500,6 +621,6 @@ Tab 选中色：`Color.themePrimary`
 3. **Button 在自定义卡片里用 `.buttonStyle(.plain)`**，避免点击闪烁
 4. **SwiftData @Model 类的属性不要用 let**，必须用 var
 5. **金额格式化**统一用 NumberFormatter（千分位分隔）
-6. **MVP 阶段不做**：分红/摊薄成本、智能操作建议（只显示仓位偏离数值）、云同步、筛选功能
+6. **当前不做的事**（V2 边界）：智能操作建议（只显示仓位偏离数值）、云同步、筛选功能、Widget/锁屏、第三方导入（雪球等）、后台定期刷新（V1.2 依赖前台触发，覆盖日常场景）。**分红与摊薄成本** V1.3 已实现（自动检测 + 手动入口）
 7. **Form 页面统一加 `.listRowBackground(Color.cardBg)`**（AssetEditView、SettingsView、AssetListManageView 的 List 行都需要），配合 `.scrollContentBackground(.hidden)` + `.background(Color.pageBg)` 保持主题一致
 8. **BTC 价格格式化**：价格 < 1 时用 4 位小数，≥ 10000 时用整数，其余用 2 位小数（不按币种判断，按 market == BTC 判断）

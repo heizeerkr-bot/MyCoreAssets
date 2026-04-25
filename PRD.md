@@ -129,12 +129,14 @@
 
 ### 5.2 初始化设置
 
-初始化为 **4 步向导**：
+初始化为 **4 步向导**（V1.1 起，后三步全部支持跳过；只有第 1 步必填）：
 
-1. 设置初始资金
-2. 添加核心资产
-3. 设置估值参数与目标仓位（合并为一步）
-4. 初始化持仓（可跳过）
+1. **设置初始资金**（必填）
+2. **添加核心资产**（可零选）— 若不选任何资产，按钮文案变 "完成初始化"，点击直接结束向导
+3. **设置估值参数与目标仓位**（可整步跳过）— 顶部蓝色提示卡告知未填也能进；已填字段需自洽（卖出 > 买入）
+4. **初始化持仓**（可整步跳过）
+
+设计立意：让用户先用起来，再渐进填写。已添加未设理想买卖价 / 目标仓位的资产，会在看板和详情页显示弱引导（蓝色提示卡），点击 push 到资产编辑页随时补完。
 
 #### 5.2.1 初始资金
 
@@ -171,15 +173,17 @@
 #### 5.2.3 价格与估值参数
 
 - 当前价格：不手动输入，由系统自动获取并更新
-- 理想买入价 A：手动输入（原币种）
-- 理想卖出价 B：手动输入（原币种）
+- 理想买入价 A：手动输入（原币种），**V1.1 起非必填**
+- 理想卖出价 B：手动输入（原币种），**V1.1 起非必填**
 - 理想买入/卖出价：**支持修改**
+- 未设置时（A=0 || B=0）资产卡片显示"估值未设置"灰色标签 + 弱引导提示，估值色条灰色化
 
 #### 5.2.4 目标仓位设置
 
-- 目标仓位比例（%）：用户为每个资产设定的理想持仓占比
+- 目标仓位比例（%）：用户为每个资产设定的理想持仓占比，**V1.1 起非必填**
 - 仓位上限（%，可选）：超出时看板醒目提示
 - 支持随时修改
+- 未设置时（targetPositionRatio == 0）卡片显示"未设目标"，仓位偏离提示也相应隐藏
 
 #### 5.2.5 持仓初始化
 
@@ -271,44 +275,121 @@
 - 单个资产获取失败不阻塞其他资产更新
 - 全部失败时提示”刷新失败，请稍后重试”
 
+### 5.5 价格/估值通知（V1.2 已实现）
+
+价格刷新成功后判断每个资产是否跨越关键阈值，跨越则发本地通知。无需后台刷新——依赖前台进入看板时的自动刷新（10s 周期）触发。
+
+#### 5.5.1 触发场景（4 种）
+
+- **价格跌破理想买入价**：`oldPrice > A && newPrice ≤ A`
+- **价格突破理想卖出价**：`oldPrice < B && newPrice ≥ B`
+- **进入极度低估**：旧档位 ≠ deepUndervalued && 新档位 == deepUndervalued
+- **进入极度高估**：旧档位 ≠ deepOvervalued && 新档位 == deepOvervalued
+
+未设理想价的资产不参与跨越检测。
+
+#### 5.5.2 防抖与权限
+
+- 同一资产同类提醒 24 小时内最多发一次（`Asset.alertStateJSON` 持久化最近一次发送时间）
+- 首次开启通知时调用 `UNUserNotificationCenter.requestAuthorization`；用户拒绝后在设置页显示警告行 + 一键跳系统设置
+- App 在前台时也显示 banner（实现 `UNUserNotificationCenterDelegate.willPresent` 返回 `[.banner, .list, .sound]`）
+
+#### 5.5.3 设置入口
+
+- "我的" Tab 加 "通知" Section
+- 主开关 + footer 一段话说明触发场景；4 种 AlertType 的子开关 UI 不暴露（默认全开）
+- 提供"发送测试通知"按钮，方便用户验链路
+
+### 5.6 分红/拆股自动检测 + 送股/配股手动入口（V1.3 已实现）
+
+设计前提：用户日常不会盯盘，所以纯手动录入分红/拆股不可行。改为**半自动**——App 主动拉派息/拆股事件，与本地交易比对，找出未录入候选 → 用户在详情页一键确认才落库。**永远要用户确认，不偷偷写数据。**
+
+#### 5.6.1 自动检测范围
+
+- **现金分红**（cashDividend）— 各市场都能拉
+- **拆股**（split）— 主要服务美股/港股；A 股拆股极少
+
+送股、配股因免费 API 不可靠，**仅手动录入**（详情页底部"更多"菜单）。
+
+#### 5.6.2 数据源策略
+
+| Market | 主源 | 兜底 |
+|---|---|---|
+| US | Yahoo Finance v8（events=div,split） | — |
+| HK | Yahoo Finance v8（symbol → `0000.HK`） | — |
+| CN | 东方财富 datacenter API | 新浪财经 openapi |
+| FUND | 东方财富基金分红接口 | — |
+| BTC | — | 不分红 |
+
+复用 RealPriceService 的网络模板（10s timeout、重试 2 次、-999 取消识别、静态 URLSession）。失败时静默——不阻塞其他功能，候选卡不显示。
+
+#### 5.6.3 比对/去重
+
+- 取本地 BUY 交易最早 occurredAt 作为 since（限定检测起点）
+- 用 dayKey（YYYY-MM-DD UTC）与本地已记录的 DIVIDEND/SPLIT 交易去重
+- 同一资产 24h 内复用上次检测结果（`Asset.lastDividendCheckAt`）
+
+#### 5.6.4 用户交互
+
+- 资产详情页顶部 priceCard 之后插入金色"候选事件卡"：
+  - 标题"检测到 N 笔未记录事件" + 列出 ≤3 条预览
+  - 单条点击 → 弹对应录入 sheet（值已预填，用户可改）
+  - "全部记录" 按钮 → 弹 confirm dialog 显示**摘要**（事件数 / 现金净变化 / 平均成本变化预览 / 持仓变化预览）→ 用户确认才批量写入
+- 详情页底部由"买入/卖出"二等分改为"买入/卖出/更多"三等分
+- "更多" Menu 项：分红 / 拆股 / 送股 / 配股 → 各自打开录入 sheet（无预填）
+
+#### 5.6.5 数据应用公式
+
+- **现金分红**：`cash += perShare × shares × fxRate`；`averageCost -= perShare`（"摄薄成本"语义，数学上不双计——avgCost × shares 等于剩余净投入资金）
+- **拆股**：`holdingQuantity *= ratio`；`averageCost /= ratio`；现金不变
+- **送股**：`bonus = oldQ × ratio`；`newQ = oldQ + bonus`；`averageCost = oldCost × oldQ / newQ`；现金不变
+- **配股**：`averageCost = (oldCost × oldQ + price × newQ) / (oldQ + newQ)`；`holdingQuantity += newQ`；`cash -= price × newQ × fxRate`
+
+#### 5.6.6 撤回机制（不做）
+
+V1.3 不做单笔交易撤回。如果数据出错，用户可整体删除资产（资产管理 Tab 左滑删除），现金会按所有交易反向冲销恢复。删除后重新加资产、重录交易作为兜底逃生通道。
+
 ## 6. 数据与模型 (Data Requirements)
 
 ### 6.1 Asset（资产）
 
-建议字段：
+字段：
 
 - id
 - name
 - symbol/code
 - market (CN/HK/US/BTC/FUND)
 - currency (CNY/HKD/USD/...)
-- idealBuyPrice (A，原币种)
-- idealSellPrice (B，原币种)
+- idealBuyPrice (A，原币种；0 = 未设置)
+- idealSellPrice (B，原币种；0 = 未设置)
 - currentPrice (P，原币种)
 - lastPriceUpdatedAt
 - holdingQuantity
 - averageCost (原币种)
-- targetPositionRatio（目标仓位比例，%）
+- targetPositionRatio（目标仓位比例，%；0 = 未设置）
 - maxPositionRatio（仓位上限，%，可选）
 - isWatched / watchListRank（常关注列表）
 - notes（可选）
+- alertStateJSON（V1.2，通知 24h 防抖；JSON `[AlertType: lastSentDate]`）
+- lastDividendCheckAt（V1.3，分红检测 24h 缓存）
 
 ### 6.2 Transaction（交易）
 
 - id
 - assetId
-- type (BUY/SELL)
-- price（原币种）
-- quantity
-- occurredAt
+- type — V1.3 起：`BUY` / `SELL` / `DIVIDEND` / `SPLIT` / `BONUS_SHARE` / `RIGHTS_ISSUE`
+- price（原币种，语义按 type 复用：BUY/SELL = 交易价；DIVIDEND = 每股股息；SPLIT/BONUS_SHARE = 比率；RIGHTS_ISSUE = 配股价）
+- quantity（语义按 type 复用：BUY/SELL = 交易数量；DIVIDEND = ex-date 持仓数；SPLIT = 净增量；BONUS_SHARE = 送股数；RIGHTS_ISSUE = 配股数）
+- occurredAt（DIVIDEND/SPLIT/BONUS_SHARE 是 ex-date；RIGHTS_ISSUE 是缴款日）
 - fxRateUsed（可选，记录折算时的汇率，便于复现）
-- cnyAmount（可选，折算人民币金额）
+- cnyAmount（折算人民币金额；DIVIDEND 正数=入账；RIGHTS_ISSUE 负数=流出；SPLIT/BONUS_SHARE = 0）
 
 ### 6.3 Portfolio（组合/全局）
 
 - initialCashCNY（默认 1,250,000）
 - currentCashCNY
 - lastGlobalRefreshAt
+- hasCompletedSetup（初始化向导完成标记）
 
 ## 7. 外部依赖与接口 (Integrations)
 
@@ -377,7 +458,7 @@ MVP 实现（已接入）：
 
 ## 11. 里程碑与迭代 (Milestones)
 
-### V0.1 MVP（可用闭环）
+### V1.0 — App Store 已上架（2026-04 之前）
 
 - 初始资金设置
 - 本地预置 Top100 搜索 + 添加资产
@@ -386,11 +467,43 @@ MVP 实现（已接入）：
 - 买入/卖出 + 交易历史
 - 价格刷新（手动 + 定时策略雏形）
 
-### V0.2 增强
+### V1.1 — 轻入门（已发布，2026-04）
 
-- 常关注 15 个资产快捷列表/排序
-- 更完善的市场交易时间与更新策略
-- 基金数据源接入（如天天基金）
+- 初始化向导第 2 步可零选、第 3、4 步可整步跳过
+- 单资产新增不再强制弹编辑页（toast 提示，可主动点击列表项进编辑）
+- 看板/详情页未设估值或目标仓位时显示弱引导（蓝色提示卡）
+- 详情页右上角加"编辑" toolbar 入口
+- Asset 模型新增 `hasValuationConfigured` / `hasTargetPosition` 计算属性
+
+### V1.2 — 价格/估值通知（已发布，2026-04）
+
+- 4 种 AlertType（跌破理想买入价 / 突破理想卖出价 / 进入极度低估 / 进入极度高估）
+- 价格刷新成功后自动评估跨越，触发本地通知
+- 24h 同类防抖
+- 设置页"通知" Section + 测试通知按钮
+- 前台 banner 显示（实现 willPresent delegate）
+
+### V1.3 — 分红/拆股自动检测 + 送股/配股手动入口（已发布，2026-04）
+
+- US/HK 走 Yahoo Finance v8（events=div,split）
+- A 股走东方财富 datacenter，新浪 openapi 兜底
+- 基金走天天基金分红接口
+- 详情页金色"候选事件卡"展示未录入事件，单条点击预填录入
+- "全部记录"按钮带 confirmDialog 摘要
+- 详情页底部三按钮（买入/卖出/更多 Menu），更多 Menu 含：分红 / 拆股 / 送股 / 配股
+- 现金分红走"摄薄成本"语义：averageCost -= perShare；同时 cash += 总金额
+- 4 种 corporate action 配色：金/蓝/紫/青
+
+### 后续不做（V2 边界）
+
+- iCloud 同步 / 多端
+- Widget / 锁屏 widget
+- 第三方 App 导入（雪球等）
+- 智能买卖建议（保留仓位偏离数值即可）
+- 后台定期刷新（V1.2 依赖前台触发已能覆盖）
+- 单笔交易撤回（用户可整体删除资产作为兜底）
+
+下一步是 UI 美化整体 pass，不是新功能开发。
 
 ## 12. 风险与待确认
 
