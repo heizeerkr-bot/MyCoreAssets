@@ -22,6 +22,9 @@ struct AssetCardView: View {
 
     private var deviationText: String {
         let absValue = abs(positionDeviation)
+        if !asset.hasTargetPosition {
+            return "尚未设置目标仓位"
+        }
         if currentPositionPercent >= maxPositionPercent {
             return "已超过仓位上限"
         }
@@ -35,10 +38,24 @@ struct AssetCardView: View {
     }
 
     private var deviationColor: Color {
+        if !asset.hasTargetPosition { return .textTertiary }
         if currentPositionPercent >= maxPositionPercent { return .valuationRed }
         if positionDeviation > 3 { return .valuationOrange }
         if positionDeviation < -3 { return .themePrimary }
         return .valuationDeepGreen
+    }
+
+    private var needsConfigGuidance: Bool {
+        !asset.hasValuationConfigured || !asset.hasTargetPosition
+    }
+
+    private var guidanceText: String {
+        switch (asset.hasValuationConfigured, asset.hasTargetPosition) {
+        case (false, false): return "设置理想买卖价与目标仓位，开启估值与仓位分析"
+        case (false, true):  return "设置理想买卖价，查看估值状态"
+        case (true, false):  return "设置目标仓位，查看仓位偏离"
+        case (true, true):   return ""
+        }
     }
 
     var body: some View {
@@ -54,13 +71,23 @@ struct AssetCardView: View {
                             .font(.smallCaption)
                             .foregroundColor(.textSecondary)
 
-                        Text(asset.valuationLevel.rawValue)
-                            .font(.smallCaption)
-                            .foregroundColor(asset.valuationLevel.color)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, Spacing.xs)
-                            .background(asset.valuationLevel.color.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                        if asset.hasValuationConfigured {
+                            Text(asset.valuationLevel.rawValue)
+                                .font(.smallCaption)
+                                .foregroundColor(asset.valuationLevel.color)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.vertical, Spacing.xs)
+                                .background(asset.valuationLevel.color.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                        } else {
+                            Text("估值未设置")
+                                .font(.smallCaption)
+                                .foregroundColor(.textTertiary)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.vertical, Spacing.xs)
+                                .background(Color.divider.opacity(0.5))
+                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                        }
                     }
                 }
 
@@ -95,12 +122,32 @@ struct AssetCardView: View {
                         .font(.smallCaption)
                         .foregroundColor(deviationColor)
                     Spacer()
-                    Text("目标 \(String(format: "%.0f", targetPositionPercent))%")
+                    Text(asset.hasTargetPosition
+                         ? "目标 \(String(format: "%.0f", targetPositionPercent))%"
+                         : "未设目标")
                         .font(.smallCaption)
                         .foregroundColor(.textTertiary)
                 }
             }
 
+            if needsConfigGuidance {
+                Spacer().frame(height: Spacing.sm)
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.smallCaption)
+                    Text(guidanceText)
+                        .font(.smallCaption)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.smallCaption)
+                }
+                .foregroundColor(.themePrimary)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.themeLight)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+            }
         }
         .padding(Spacing.cardPadding)
         .background(Color.cardBg)

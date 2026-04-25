@@ -32,6 +32,9 @@ struct AssetDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.md) {
+                if !asset.hasValuationConfigured || !asset.hasTargetPosition {
+                    configGuidanceCard
+                }
                 priceCard
                 positionCard
                 valuationCard
@@ -45,6 +48,17 @@ struct AssetDetailView: View {
         .background(Color.pageBg)
         .navigationTitle(asset.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    AssetEditView(asset: asset)
+                } label: {
+                    Text("编辑")
+                        .font(.bodyText)
+                        .foregroundColor(.themePrimary)
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             bottomActionBar
         }
@@ -54,6 +68,43 @@ struct AssetDetailView: View {
         .sheet(isPresented: $showingSellSheet) {
             SellView(asset: asset)
         }
+    }
+
+    private var configGuidanceCard: some View {
+        let guidance: String = {
+            switch (asset.hasValuationConfigured, asset.hasTargetPosition) {
+            case (false, false): return "设置理想买卖价与目标仓位，开启完整的估值与仓位分析"
+            case (false, true):  return "设置理想买卖价，查看估值状态与买卖建议"
+            case (true, false):  return "设置目标仓位，查看仓位偏离与调仓提示"
+            case (true, true):   return ""
+            }
+        }()
+
+        return NavigationLink {
+            AssetEditView(asset: asset)
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.bodyText)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("完善资产信息")
+                        .font(.bodyText)
+                        .foregroundColor(.textPrimary)
+                    Text(guidance)
+                        .font(.smallCaption)
+                        .foregroundColor(.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.textTertiary)
+            }
+            .foregroundColor(.themePrimary)
+            .padding(Spacing.cardPadding)
+            .background(Color.themeLight)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        }
+        .buttonStyle(.plain)
     }
 
     private var priceCard: some View {
@@ -97,7 +148,9 @@ struct AssetDetailView: View {
                     .foregroundColor(.themePrimary)
                 Spacer()
                 VStack(alignment: .trailing, spacing: Spacing.xs) {
-                    Text("目标 \(String(format: "%.0f%%", targetPositionPercent))")
+                    Text(asset.hasTargetPosition
+                         ? "目标 \(String(format: "%.0f%%", targetPositionPercent))"
+                         : "目标 未设置")
                         .font(.smallCaption)
                         .foregroundColor(.textSecondary)
                     if let maxPositionPercent {
@@ -127,21 +180,38 @@ struct AssetDetailView: View {
                     .font(.sectionTitle)
                     .foregroundColor(.textPrimary)
                 Spacer()
-                Text(asset.valuationLevel.rawValue)
-                    .font(.caption)
-                    .foregroundColor(asset.valuationLevel.color)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, Spacing.xs)
-                    .background(asset.valuationLevel.color.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                if asset.hasValuationConfigured {
+                    Text(asset.valuationLevel.rawValue)
+                        .font(.caption)
+                        .foregroundColor(asset.valuationLevel.color)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(asset.valuationLevel.color.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                } else {
+                    Text("未设置")
+                        .font(.caption)
+                        .foregroundColor(.textTertiary)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(Color.divider.opacity(0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                }
             }
 
-            ValuationScaleView(level: asset.valuationLevel)
+            if asset.hasValuationConfigured {
+                ValuationScaleView(level: asset.valuationLevel)
 
-            HStack {
-                priceItem(title: "理想买入", value: "\(asset.currencySymbol)\(formatPrice(asset.idealBuyPrice, currency: asset.currency, market: asset.market))")
-                Spacer()
-                priceItem(title: "理想卖出", value: "\(asset.currencySymbol)\(formatPrice(asset.idealSellPrice, currency: asset.currency, market: asset.market))")
+                HStack {
+                    priceItem(title: "理想买入", value: "\(asset.currencySymbol)\(formatPrice(asset.idealBuyPrice, currency: asset.currency, market: asset.market))")
+                    Spacer()
+                    priceItem(title: "理想卖出", value: "\(asset.currencySymbol)\(formatPrice(asset.idealSellPrice, currency: asset.currency, market: asset.market))")
+                }
+            } else {
+                Text("暂未设置估值区间，可在右上角「编辑」中填写理想买入价和理想卖出价。")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(Spacing.cardPadding)

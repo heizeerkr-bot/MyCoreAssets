@@ -163,7 +163,7 @@ struct DashboardView: View {
             Text("还没有核心资产")
                 .font(.sectionTitle)
                 .foregroundColor(.textPrimary)
-            Text("请先完成初始化向导添加资产。")
+            Text("添加你想长期关注的核心资产，开始管理")
                 .font(.caption)
                 .foregroundColor(.textSecondary)
             Button {

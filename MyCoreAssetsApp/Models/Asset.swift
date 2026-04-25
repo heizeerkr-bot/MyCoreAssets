@@ -89,10 +89,16 @@ extension Asset {
         return ((currentPrice - averageCost) / averageCost) * 100
     }
 
+    var hasValuationConfigured: Bool {
+        idealBuyPrice > 0 && idealSellPrice > 0 && idealSellPrice > idealBuyPrice
+    }
+
+    var hasTargetPosition: Bool {
+        targetPositionRatio > 0
+    }
+
     var valuationLevel: ValuationLevel {
-        guard idealBuyPrice > 0, idealSellPrice > 0, idealSellPrice > idealBuyPrice else {
-            return .fair
-        }
+        guard hasValuationConfigured else { return .fair }
         if currentPrice <= idealBuyPrice * 0.85 { return .deepUndervalued }
         if currentPrice <= idealBuyPrice { return .undervalued }
         if currentPrice < idealSellPrice { return .fair }

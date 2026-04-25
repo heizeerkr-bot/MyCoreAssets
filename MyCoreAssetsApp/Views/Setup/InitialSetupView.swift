@@ -34,7 +34,7 @@ struct InitialSetupView: View {
     private let stepTitles = [
         "1. 设置初始资金",
         "2. 添加核心资产",
-        "3. 设置估值与仓位",
+        "3. 设置估值与仓位（可跳过）",
         "4. 初始化持仓（可跳过）",
     ]
 
@@ -219,6 +219,18 @@ struct InitialSetupView: View {
     private var stepThreeValuationAndPosition: some View {
         ScrollView {
             LazyVStack(spacing: Spacing.md) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                    Text("尚不确定理想买卖价或目标仓位？可整步跳过，之后在资产详情里随时填写。")
+                        .font(.caption)
+                }
+                .foregroundColor(.themePrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Spacing.cardPadding)
+                .background(Color.themeLight)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+
                 if totalTargetRatio > 100 {
                     HStack(spacing: Spacing.sm) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -301,7 +313,7 @@ struct InitialSetupView: View {
             Button {
                 goNextStep()
             } label: {
-                Text(stepIndex == stepTitles.count - 1 ? "完成初始化" : "下一步")
+                Text(primaryButtonTitle)
                     .font(.bodyText)
                     .foregroundColor(.cardBg)
                     .frame(maxWidth: .infinity)
@@ -330,18 +342,25 @@ struct InitialSetupView: View {
         }
     }
 
+    private var primaryButtonTitle: String {
+        if stepIndex == stepTitles.count - 1 { return "完成初始化" }
+        if stepIndex == 1 && selectedAssetIDs.isEmpty { return "完成初始化" }
+        return "下一步"
+    }
+
     private var canProceedCurrentStep: Bool {
         switch stepIndex {
         case 0:
             return (parseNumber(initialCashText) ?? 0) > 0
         case 1:
-            return !selectedAssetIDs.isEmpty
+            return true
         case 2:
+            // V1.1: 估值与仓位整步可跳过，所有字段非必填，但已填写的需自洽（卖出 > 买入）
             return setupDrafts.allSatisfy { draft in
                 let buy = parseNumber(draft.idealBuyPrice) ?? 0
                 let sell = parseNumber(draft.idealSellPrice) ?? 0
-                let target = parseNumber(draft.targetPositionRatio) ?? 0
-                return buy > 0 && sell > buy && target > 0
+                if buy > 0 && sell > 0 { return sell > buy }
+                return true
             }
         default:
             return true
@@ -387,6 +406,11 @@ struct InitialSetupView: View {
 
     private func goNextStep() {
         errorMessage = nil
+        // step 2 选了 0 个资产时，后两步（per-asset 估值/持仓）无意义，直接完成初始化
+        if stepIndex == 1 && selectedAssetIDs.isEmpty {
+            persistSetup()
+            return
+        }
         if stepIndex < stepTitles.count - 1 {
             if stepIndex == 1 {
                 syncDraftsWithSelection()

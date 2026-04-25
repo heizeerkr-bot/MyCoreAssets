@@ -12,6 +12,8 @@ struct AssetListManageView: View {
     @State private var selectedAssetIDs: Set<String> = []
     @State private var deleteTargets: [Asset] = []
     @State private var showingDeleteConfirm = false
+    @State private var toastMessage: String?
+    @State private var toastTask: Task<Void, Never>?
 
     private var portfolio: Portfolio? { portfolios.first }
 
@@ -65,6 +67,20 @@ struct AssetListManageView: View {
                     autoShowSearch = false
                 }
             }
+            .overlay(alignment: .bottom) {
+                if let toastMessage {
+                    Text(toastMessage)
+                        .font(.caption)
+                        .foregroundColor(.cardBg)
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, Spacing.sm)
+                        .background(Color.textPrimary.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                        .padding(.bottom, Spacing.lg)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: toastMessage)
         }
     }
 
@@ -154,7 +170,6 @@ struct AssetListManageView: View {
         }
 
         let currentMaxOrder = assets.map(\.sortOrder).max() ?? -1
-        var firstInsertedID: UUID?
         for (index, preset) in newPresets.enumerated() {
             let newAsset = Asset(
                 name: preset.name,
@@ -174,15 +189,21 @@ struct AssetListManageView: View {
                 sortOrder: currentMaxOrder + index + 1
             )
             modelContext.insert(newAsset)
-            if firstInsertedID == nil {
-                firstInsertedID = newAsset.id
-            }
         }
         try? modelContext.save()
         selectedAssetIDs.removeAll()
 
-        if let firstInsertedID {
-            path.append(firstInsertedID)
+        showToast("已添加 \(newPresets.count) 个资产，可点击列表项完善估值与仓位")
+    }
+
+    private func showToast(_ message: String) {
+        toastTask?.cancel()
+        toastMessage = message
+        toastTask = Task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            if !Task.isCancelled {
+                await MainActor.run { toastMessage = nil }
+            }
         }
     }
 
