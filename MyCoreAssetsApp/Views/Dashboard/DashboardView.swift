@@ -231,9 +231,20 @@ struct DashboardView: View {
         var updatedCount = 0
         for asset in assets {
             guard let newPrice = prices[asset.id], newPrice > 0 else { continue }
+            let oldPrice = asset.currentPrice
+            let oldLevel = asset.valuationLevel
+
             asset.currentPrice = newPrice
             asset.lastPriceUpdatedAt = now
             updatedCount += 1
+
+            evaluateAlerts(
+                asset: asset,
+                oldPrice: oldPrice,
+                newPrice: newPrice,
+                oldLevel: oldLevel,
+                newLevel: asset.valuationLevel
+            )
         }
         if updatedCount == 0 {
             debugLog("Refresh completed but no asset was updated")
@@ -257,6 +268,33 @@ struct DashboardView: View {
             debugLog("Trigger refresh from \(source)")
             await refreshPrices(showMessage: showMessage)
             refreshTask = nil
+        }
+    }
+
+    private func evaluateAlerts(
+        asset: Asset,
+        oldPrice: Double,
+        newPrice: Double,
+        oldLevel: ValuationLevel,
+        newLevel: ValuationLevel
+    ) {
+        guard oldPrice > 0 else { return }
+        guard asset.hasValuationConfigured else { return }
+
+        let buy = asset.idealBuyPrice
+        let sell = asset.idealSellPrice
+
+        if oldPrice > buy && newPrice <= buy {
+            NotificationService.shared.scheduleIfAllowed(asset: asset, type: .crossedIdealBuy)
+        }
+        if oldPrice < sell && newPrice >= sell {
+            NotificationService.shared.scheduleIfAllowed(asset: asset, type: .crossedIdealSell)
+        }
+        if oldLevel != .deepUndervalued && newLevel == .deepUndervalued {
+            NotificationService.shared.scheduleIfAllowed(asset: asset, type: .enteredDeepUnder)
+        }
+        if oldLevel != .deepOvervalued && newLevel == .deepOvervalued {
+            NotificationService.shared.scheduleIfAllowed(asset: asset, type: .enteredDeepOver)
         }
     }
 

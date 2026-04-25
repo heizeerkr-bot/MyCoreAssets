@@ -27,6 +27,7 @@
 		A1B2C3D4E5F60001000A0011 /* PriceServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0011 /* PriceServiceProtocol.swift */; };
 		A1B2C3D4E5F60001000A0012 /* RealPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */; };
 		A1B2C3D4E5F60001000A0013 /* MockPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */; };
+		A1B2C3D4E5F60001000A001C /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001C /* NotificationService.swift */; };
 		A1B2C3D4E5F60001000A0014 /* ForexServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */; };
 		A1B2C3D4E5F60001000A0015 /* StaticForexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */; };
 		A1B2C3D4E5F60001000A0016 /* BuyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0016 /* BuyView.swift */; };
@@ -58,6 +59,7 @@
 		A1B2C3D4E5F60002000A0011 /* PriceServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceServiceProtocol.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealPriceService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPriceService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001C /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForexServiceProtocol.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaticForexService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0016 /* BuyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyView.swift; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 				A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */,
 				A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */,
 				A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */,
+				A1B2C3D4E5F60002000A001C /* NotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -332,6 +335,7 @@
 				A1B2C3D4E5F60001000A0019 /* AssetListManageView.swift in Sources */,
 				A1B2C3D4E5F60001000A001A /* AssetEditView.swift in Sources */,
 				A1B2C3D4E5F60001000A001B /* SettingsView.swift in Sources */,
+				A1B2C3D4E5F60001000A001C /* NotificationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

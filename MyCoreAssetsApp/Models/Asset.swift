@@ -19,6 +19,8 @@ final class Asset {
     var isWatched: Bool
     var notes: String?
     var sortOrder: Int
+    /// 通知防抖记录：JSON encoded `[AlertType.rawValue: Date]`。每种 AlertType 24h 内只通知一次。
+    var alertStateJSON: String?
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.asset)
     var transactions: [Transaction]
@@ -40,6 +42,7 @@ final class Asset {
         isWatched: Bool = true,
         notes: String? = nil,
         sortOrder: Int = 0,
+        alertStateJSON: String? = nil,
         transactions: [Transaction] = []
     ) {
         self.id = id
@@ -58,6 +61,7 @@ final class Asset {
         self.isWatched = isWatched
         self.notes = notes
         self.sortOrder = sortOrder
+        self.alertStateJSON = alertStateJSON
         self.transactions = transactions
     }
 }

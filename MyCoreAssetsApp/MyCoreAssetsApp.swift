@@ -3,6 +3,10 @@ import SwiftData
 
 @main
 struct MyCoreAssetsApp: App {
+    init() {
+        NotificationService.shared.registerAsDelegate()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentRootView()
