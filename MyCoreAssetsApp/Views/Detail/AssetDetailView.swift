@@ -198,7 +198,7 @@ struct AssetDetailView: View {
                 }
             }
 
-            PositionBar(
+            LegacyPositionBar(
                 current: currentPositionPercent,
                 target: targetPositionPercent,
                 max: maxPositionPercent

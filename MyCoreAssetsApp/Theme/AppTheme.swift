@@ -35,6 +35,29 @@ extension Color {
     static let splitBlue = Color(hex: "1E88E5")      // 拆股（复用主题蓝）
     static let bonusPurple = Color(hex: "8E24AA")    // 送股
     static let rightsTeal = Color(hex: "00897B")     // 配股
+
+    // V2.0 hero / decoration
+    static let heroWaveFill = Color.white.opacity(0.12)     // hero 卡白色波纹填充
+    static let heroWaveStroke = Color.white.opacity(0.18)   // hero 卡白色波纹描边
+    static let heroLightWave = Color.themePrimary.opacity(0.08) // 浅色 hero 卡蓝色装饰
+    static let positionBarTrack = Color.themeLight          // 进度条底色
+    static let targetMarker = Color(hex: "FFA726")          // 进度条目标 marker（橙黄）
+}
+
+// MARK: - Gradients (V2.0)
+
+extension LinearGradient {
+    static let heroBlue = LinearGradient(
+        colors: [Color.themeDeep, Color.themePrimary],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let heroLight = LinearGradient(
+        colors: [Color.cardBg, Color.themeLight.opacity(0.55)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 // MARK: - Hex Color Init
@@ -71,6 +94,11 @@ extension Font {
     static let bodyText = Font.system(size: 16, weight: .regular)
     static let caption = Font.system(size: 14, weight: .regular)
     static let smallCaption = Font.system(size: 12, weight: .regular)
+
+    // V2.0 hero typography
+    static let heroAmount = Font.system(size: 36, weight: .bold, design: .rounded)
+    static let heroAmountLarge = Font.system(size: 44, weight: .bold, design: .rounded)
+    static let positionPctLg = Font.system(size: 32, weight: .semibold, design: .rounded)
 }
 
 // MARK: - Spacing
@@ -92,4 +120,15 @@ enum CornerRadius {
     static let md: CGFloat = 12
     static let lg: CGFloat = 16
     static let xl: CGFloat = 20
+    static let xxl: CGFloat = 24    // V2.0 hero 卡
+    static let pill: CGFloat = 999  // V2.0 标签 / 进度条
+}
+
+// MARK: - Card Shadow Helper (V2.0)
+
+extension View {
+    /// 标准卡片阴影：轻微、灰黑、向下偏移 2pt
+    func cardShadow() -> some View {
+        self.shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+    }
 }

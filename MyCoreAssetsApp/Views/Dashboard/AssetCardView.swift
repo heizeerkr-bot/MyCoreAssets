@@ -111,7 +111,7 @@ struct AssetCardView: View {
                         .foregroundColor(.themePrimary)
                 }
 
-                PositionBar(
+                LegacyPositionBar(
                     current: currentPositionPercent,
                     target: targetPositionPercent,
                     max: asset.maxPositionRatio
@@ -160,7 +160,7 @@ struct AssetCardView: View {
     }
 }
 
-struct PositionBar: View {
+struct LegacyPositionBar: View {
     let current: Double
     let target: Double
     let max: Double?

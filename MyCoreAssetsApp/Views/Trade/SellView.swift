@@ -178,7 +178,7 @@ struct SellView: View {
                 previewItem(title: "卖出后仓位", value: "\(String(format: "%.1f", projectedPosition))%")
             }
 
-            PositionBar(
+            LegacyPositionBar(
                 current: projectedPosition,
                 target: asset.targetPositionRatio,
                 max: asset.maxPositionRatio

@@ -42,6 +42,14 @@
 		A1B2C3D4E5F60001000A0019 /* AssetListManageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0019 /* AssetListManageView.swift */; };
 		A1B2C3D4E5F60001000A001A /* AssetEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001A /* AssetEditView.swift */; };
 		A1B2C3D4E5F60001000A001B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001B /* SettingsView.swift */; };
+		A1B2C3D4E5F60001000A0023 /* PrivacyMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0023 /* PrivacyMode.swift */; };
+		A1B2C3D4E5F60001000A0024 /* HeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0024 /* HeroCard.swift */; };
+		A1B2C3D4E5F60001000A0025 /* PositionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0025 /* PositionBar.swift */; };
+		A1B2C3D4E5F60001000A0026 /* ValuationGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0026 /* ValuationGauge.swift */; };
+		A1B2C3D4E5F60001000A0027 /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0027 /* SectionCard.swift */; };
+		A1B2C3D4E5F60001000A0028 /* CompactAssetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0028 /* CompactAssetRow.swift */; };
+		A1B2C3D4E5F60001000A0029 /* BottomActionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0029 /* BottomActionBar.swift */; };
+		A1B2C3D4E5F60001000A002A /* PrivacyEyeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A002A /* PrivacyEyeButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +88,14 @@
 		A1B2C3D4E5F60002000A0019 /* AssetListManageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetListManageView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A001A /* AssetEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetEditView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A001B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0023 /* PrivacyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyMode.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0024 /* HeroCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroCard.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0025 /* PositionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionBar.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0026 /* ValuationGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValuationGauge.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0027 /* SectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCard.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0028 /* CompactAssetRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactAssetRow.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0029 /* BottomActionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomActionBar.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A002A /* PrivacyEyeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyEyeButton.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60003000A0001 /* MyCoreAssetsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyCoreAssetsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -133,13 +149,29 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60002000A0003 /* AppTheme.swift */,
+				A1B2C3D4E5F60002000A0023 /* PrivacyMode.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60005000A0011 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60002000A0024 /* HeroCard.swift */,
+				A1B2C3D4E5F60002000A0025 /* PositionBar.swift */,
+				A1B2C3D4E5F60002000A0026 /* ValuationGauge.swift */,
+				A1B2C3D4E5F60002000A0027 /* SectionCard.swift */,
+				A1B2C3D4E5F60002000A0028 /* CompactAssetRow.swift */,
+				A1B2C3D4E5F60002000A0029 /* BottomActionBar.swift */,
+				A1B2C3D4E5F60002000A002A /* PrivacyEyeButton.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4E5F60005000A0005 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F60005000A0011 /* Components */,
 				A1B2C3D4E5F60005000A0006 /* Dashboard */,
 				A1B2C3D4E5F60005000A0007 /* Detail */,
 				A1B2C3D4E5F60005000A000B /* Setup */,
@@ -360,6 +392,14 @@
 				A1B2C3D4E5F60001000A0020 /* SplitRecordView.swift in Sources */,
 				A1B2C3D4E5F60001000A0021 /* BonusShareRecordView.swift in Sources */,
 				A1B2C3D4E5F60001000A0022 /* RightsRecordView.swift in Sources */,
+				A1B2C3D4E5F60001000A0023 /* PrivacyMode.swift in Sources */,
+				A1B2C3D4E5F60001000A0024 /* HeroCard.swift in Sources */,
+				A1B2C3D4E5F60001000A0025 /* PositionBar.swift in Sources */,
+				A1B2C3D4E5F60001000A0026 /* ValuationGauge.swift in Sources */,
+				A1B2C3D4E5F60001000A0027 /* SectionCard.swift in Sources */,
+				A1B2C3D4E5F60001000A0028 /* CompactAssetRow.swift in Sources */,
+				A1B2C3D4E5F60001000A0029 /* BottomActionBar.swift in Sources */,
+				A1B2C3D4E5F60001000A002A /* PrivacyEyeButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
