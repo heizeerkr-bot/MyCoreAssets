@@ -28,6 +28,12 @@
 		A1B2C3D4E5F60001000A0012 /* RealPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */; };
 		A1B2C3D4E5F60001000A0013 /* MockPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */; };
 		A1B2C3D4E5F60001000A001C /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001C /* NotificationService.swift */; };
+		A1B2C3D4E5F60001000A001D /* DividendServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001D /* DividendServiceProtocol.swift */; };
+		A1B2C3D4E5F60001000A001E /* RealDividendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001E /* RealDividendService.swift */; };
+		A1B2C3D4E5F60001000A001F /* DividendRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A001F /* DividendRecordView.swift */; };
+		A1B2C3D4E5F60001000A0020 /* SplitRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0020 /* SplitRecordView.swift */; };
+		A1B2C3D4E5F60001000A0021 /* BonusShareRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0021 /* BonusShareRecordView.swift */; };
+		A1B2C3D4E5F60001000A0022 /* RightsRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0022 /* RightsRecordView.swift */; };
 		A1B2C3D4E5F60001000A0014 /* ForexServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */; };
 		A1B2C3D4E5F60001000A0015 /* StaticForexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */; };
 		A1B2C3D4E5F60001000A0016 /* BuyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002000A0016 /* BuyView.swift */; };
@@ -60,6 +66,12 @@
 		A1B2C3D4E5F60002000A0012 /* RealPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealPriceService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0013 /* MockPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPriceService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A001C /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001D /* DividendServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DividendServiceProtocol.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001E /* RealDividendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealDividendService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A001F /* DividendRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DividendRecordView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0020 /* SplitRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitRecordView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0021 /* BonusShareRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonusShareRecordView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60002000A0022 /* RightsRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RightsRecordView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForexServiceProtocol.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaticForexService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002000A0016 /* BuyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyView.swift; sourceTree = "<group>"; };
@@ -200,6 +212,8 @@
 				A1B2C3D4E5F60002000A0014 /* ForexServiceProtocol.swift */,
 				A1B2C3D4E5F60002000A0015 /* StaticForexService.swift */,
 				A1B2C3D4E5F60002000A001C /* NotificationService.swift */,
+				A1B2C3D4E5F60002000A001D /* DividendServiceProtocol.swift */,
+				A1B2C3D4E5F60002000A001E /* RealDividendService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -209,6 +223,10 @@
 			children = (
 				A1B2C3D4E5F60002000A0016 /* BuyView.swift */,
 				A1B2C3D4E5F60002000A0017 /* SellView.swift */,
+				A1B2C3D4E5F60002000A001F /* DividendRecordView.swift */,
+				A1B2C3D4E5F60002000A0020 /* SplitRecordView.swift */,
+				A1B2C3D4E5F60002000A0021 /* BonusShareRecordView.swift */,
+				A1B2C3D4E5F60002000A0022 /* RightsRecordView.swift */,
 			);
 			path = Trade;
 			sourceTree = "<group>";
@@ -336,6 +354,12 @@
 				A1B2C3D4E5F60001000A001A /* AssetEditView.swift in Sources */,
 				A1B2C3D4E5F60001000A001B /* SettingsView.swift in Sources */,
 				A1B2C3D4E5F60001000A001C /* NotificationService.swift in Sources */,
+				A1B2C3D4E5F60001000A001D /* DividendServiceProtocol.swift in Sources */,
+				A1B2C3D4E5F60001000A001E /* RealDividendService.swift in Sources */,
+				A1B2C3D4E5F60001000A001F /* DividendRecordView.swift in Sources */,
+				A1B2C3D4E5F60001000A0020 /* SplitRecordView.swift in Sources */,
+				A1B2C3D4E5F60001000A0021 /* BonusShareRecordView.swift in Sources */,
+				A1B2C3D4E5F60001000A0022 /* RightsRecordView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

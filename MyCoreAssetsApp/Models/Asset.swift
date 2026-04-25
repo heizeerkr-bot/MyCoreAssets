@@ -21,6 +21,8 @@ final class Asset {
     var sortOrder: Int
     /// 通知防抖记录：JSON encoded `[AlertType.rawValue: Date]`。每种 AlertType 24h 内只通知一次。
     var alertStateJSON: String?
+    /// 上次拉取分红/拆股事件的时间。24h 内不重复检测，减少 API 调用。
+    var lastDividendCheckAt: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.asset)
     var transactions: [Transaction]
@@ -43,6 +45,7 @@ final class Asset {
         notes: String? = nil,
         sortOrder: Int = 0,
         alertStateJSON: String? = nil,
+        lastDividendCheckAt: Date? = nil,
         transactions: [Transaction] = []
     ) {
         self.id = id
@@ -62,6 +65,7 @@ final class Asset {
         self.notes = notes
         self.sortOrder = sortOrder
         self.alertStateJSON = alertStateJSON
+        self.lastDividendCheckAt = lastDividendCheckAt
         self.transactions = transactions
     }
 }

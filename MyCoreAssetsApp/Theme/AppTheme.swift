@@ -29,6 +29,12 @@ extension Color {
     // Profit/Loss
     static let profitGreen = Color(hex: "43A047")
     static let lossRed = Color(hex: "E53935")
+
+    // Corporate actions (V1.3)
+    static let dividendGold = Color(hex: "FFA726")   // 现金分红
+    static let splitBlue = Color(hex: "1E88E5")      // 拆股（复用主题蓝）
+    static let bonusPurple = Color(hex: "8E24AA")    // 送股
+    static let rightsTeal = Color(hex: "00897B")     // 配股
 }
 
 // MARK: - Hex Color Init

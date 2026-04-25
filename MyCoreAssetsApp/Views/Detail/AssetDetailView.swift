@@ -5,9 +5,20 @@ struct AssetDetailView: View {
     let asset: Asset
     let totalPortfolioValueCNY: Double
 
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.occurredAt, order: .reverse) private var transactions: [Transaction]
+    @Query(sort: \Portfolio.id) private var portfolios: [Portfolio]
     @State private var showingBuySheet = false
     @State private var showingSellSheet = false
+    @State private var showingDividendSheet = false
+    @State private var showingSplitSheet = false
+    @State private var showingBonusSheet = false
+    @State private var showingRightsSheet = false
+    @State private var pendingEvents: [DividendEvent] = []
+    @State private var dividendDetectTask: Task<Void, Never>?
+    @State private var prefillDividend: DividendEvent?
+    @State private var prefillSplit: DividendEvent?
+    @State private var showingApplyAllConfirm = false
 
     private var assetTransactions: [Transaction] {
         transactions.filter { $0.asset?.id == asset.id }
@@ -36,6 +47,9 @@ struct AssetDetailView: View {
                     configGuidanceCard
                 }
                 priceCard
+                if !pendingEvents.isEmpty {
+                    pendingEventsCard
+                }
                 positionCard
                 valuationCard
                 holdingCard
@@ -67,6 +81,29 @@ struct AssetDetailView: View {
         }
         .sheet(isPresented: $showingSellSheet) {
             SellView(asset: asset)
+        }
+        .sheet(isPresented: $showingDividendSheet, onDismiss: { prefillDividend = nil; refreshPendingEvents() }) {
+            DividendRecordView(asset: asset, prefill: prefillDividend)
+        }
+        .sheet(isPresented: $showingSplitSheet, onDismiss: { prefillSplit = nil; refreshPendingEvents() }) {
+            SplitRecordView(asset: asset, prefill: prefillSplit)
+        }
+        .sheet(isPresented: $showingBonusSheet) {
+            BonusShareRecordView(asset: asset)
+        }
+        .sheet(isPresented: $showingRightsSheet) {
+            RightsRecordView(asset: asset)
+        }
+        .task(id: asset.id) {
+            await detectPendingEvents()
+        }
+        .alert("批量记录确认", isPresented: $showingApplyAllConfirm) {
+            Button("确认记录", role: .destructive) {
+                applyAllPendingEvents()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text(applyAllSummaryText)
         }
     }
 
@@ -328,7 +365,7 @@ struct AssetDetailView: View {
     }
 
     private var bottomActionBar: some View {
-        HStack(spacing: Spacing.md) {
+        HStack(spacing: Spacing.sm) {
             Button {
                 showingBuySheet = true
             } label: {
@@ -354,10 +391,221 @@ struct AssetDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
             }
             .buttonStyle(.plain)
+
+            Menu {
+                Button {
+                    prefillDividend = nil
+                    showingDividendSheet = true
+                } label: { Label("分红", systemImage: "dollarsign.circle") }
+                Button {
+                    prefillSplit = nil
+                    showingSplitSheet = true
+                } label: { Label("拆股", systemImage: "arrow.triangle.branch") }
+                Button {
+                    showingBonusSheet = true
+                } label: { Label("送股", systemImage: "gift") }
+                Button {
+                    showingRightsSheet = true
+                } label: { Label("配股", systemImage: "plus.rectangle.on.rectangle") }
+            } label: {
+                Text("更多")
+                    .font(.bodyText)
+                    .foregroundColor(.themePrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.md)
+                    .background(Color.themePrimary.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+            }
         }
         .padding(.horizontal, Spacing.screenPadding)
         .padding(.vertical, Spacing.md)
         .background(Color.pageBg)
+    }
+
+    // MARK: - Pending events (auto-detected dividends/splits)
+
+    private var pendingEventsCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "sparkles")
+                    .font(.bodyText)
+                    .foregroundColor(.dividendGold)
+                Text("检测到 \(pendingEvents.count) 笔未记录事件")
+                    .font(.sectionTitle)
+                    .foregroundColor(.textPrimary)
+                Spacer()
+                Button("全部记录") {
+                    showingApplyAllConfirm = true
+                }
+                .font(.caption)
+                .foregroundColor(.dividendGold)
+            }
+
+            ForEach(pendingEvents.prefix(3)) { event in
+                Button {
+                    openEvent(event)
+                } label: {
+                    HStack {
+                        Text(eventTitle(event))
+                            .font(.caption)
+                            .foregroundColor(.textPrimary)
+                        Spacer()
+                        Text(eventDetail(event))
+                            .font(.smallCaption)
+                            .foregroundColor(.textSecondary)
+                        Image(systemName: "chevron.right")
+                            .font(.smallCaption)
+                            .foregroundColor(.textTertiary)
+                    }
+                    .padding(.vertical, Spacing.xs)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Divider()
+            }
+
+            if pendingEvents.count > 3 {
+                Text("还有 \(pendingEvents.count - 3) 笔，可点击「全部记录」一键应用")
+                    .font(.smallCaption)
+                    .foregroundColor(.textTertiary)
+            }
+        }
+        .padding(Spacing.cardPadding)
+        .background(Color.dividendGold.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.lg)
+                .stroke(Color.dividendGold.opacity(0.5), lineWidth: 1)
+        )
+    }
+
+    private func eventTitle(_ event: DividendEvent) -> String {
+        switch event.kind {
+        case .cashDividend: return "现金分红 \(AppDateFormat.dateOnlyString(event.exDate))"
+        case .split:        return "拆股 \(AppDateFormat.dateOnlyString(event.exDate))"
+        }
+    }
+
+    private func eventDetail(_ event: DividendEvent) -> String {
+        switch event.kind {
+        case .cashDividend:
+            return "每股 \(asset.currencySymbol)\(AppNumberFormat.twoDigitString(event.amountPerShare))"
+        case .split:
+            return "1 → \(AppNumberFormat.twoDigitString(event.splitRatio))"
+        }
+    }
+
+    private func openEvent(_ event: DividendEvent) {
+        switch event.kind {
+        case .cashDividend:
+            prefillDividend = event
+            showingDividendSheet = true
+        case .split:
+            prefillSplit = event
+            showingSplitSheet = true
+        }
+    }
+
+    /// 批量记录前的摘要文案（给 confirm alert 显示）。
+    /// 模拟按事件顺序应用一遍，得出现金净影响和最终成本。
+    private var applyAllSummaryText: String {
+        let sorted = pendingEvents.sorted { $0.exDate < $1.exDate }
+        var divCount = 0
+        var splitCount = 0
+        var simulatedCost = asset.averageCost
+        var simulatedQty = asset.holdingQuantity
+        var cashDeltaCNY: Double = 0
+        let fxRate = asset.fxRateToCNY
+
+        for event in sorted {
+            switch event.kind {
+            case .cashDividend:
+                divCount += 1
+                cashDeltaCNY += event.amountPerShare * simulatedQty * fxRate
+                simulatedCost = Swift.max(simulatedCost - event.amountPerShare, 0)
+            case .split:
+                splitCount += 1
+                guard event.splitRatio > 0 else { continue }
+                simulatedQty *= event.splitRatio
+                simulatedCost /= event.splitRatio
+            }
+        }
+
+        var lines: [String] = []
+        if divCount > 0 { lines.append("\(divCount) 笔现金分红") }
+        if splitCount > 0 { lines.append("\(splitCount) 笔拆股") }
+        let typeSummary = lines.isEmpty ? "0 笔事件" : lines.joined(separator: "、")
+
+        return """
+        将记录：\(typeSummary)
+        现金变化：+¥\(AppNumberFormat.wholeString(cashDeltaCNY))
+        平均成本：\(asset.currencySymbol)\(AppNumberFormat.twoDigitString(asset.averageCost)) → \(asset.currencySymbol)\(AppNumberFormat.twoDigitString(simulatedCost))
+        持仓数量：\(AppNumberFormat.quantityString(asset.holdingQuantity)) → \(AppNumberFormat.quantityString(simulatedQty))
+        """
+    }
+
+    private func applyAllPendingEvents() {
+        // 按 exDate 升序应用（先发生的先入账，公式独立无冲突）
+        let sorted = pendingEvents.sorted { $0.exDate < $1.exDate }
+        for event in sorted {
+            applyEventDirectly(event)
+        }
+        pendingEvents = []
+        try? modelContext.save()
+    }
+
+    private func applyEventDirectly(_ event: DividendEvent) {
+        let portfolio = portfolios.first
+        switch event.kind {
+        case .cashDividend:
+            guard asset.holdingQuantity > 0 else { return }
+            let perShare = event.amountPerShare
+            let fxRate = asset.fxRateToCNY
+            let totalCashCNY = perShare * asset.holdingQuantity * fxRate
+            let trade = Transaction(
+                asset: asset,
+                type: TradeType.dividend.rawValue,
+                price: perShare,
+                quantity: asset.holdingQuantity,
+                occurredAt: event.exDate,
+                fxRateUsed: fxRate,
+                cnyAmount: totalCashCNY
+            )
+            asset.averageCost = Swift.max(asset.averageCost - perShare, 0)
+            portfolio?.currentCashCNY += totalCashCNY
+            modelContext.insert(trade)
+        case .split:
+            let ratio = event.splitRatio
+            guard ratio > 0, asset.holdingQuantity > 0 else { return }
+            let oldQ = asset.holdingQuantity
+            let newQ = oldQ * ratio
+            let trade = Transaction(
+                asset: asset,
+                type: TradeType.split.rawValue,
+                price: ratio,
+                quantity: newQ - oldQ,
+                occurredAt: event.exDate,
+                fxRateUsed: nil,
+                cnyAmount: 0
+            )
+            asset.holdingQuantity = newQ
+            asset.averageCost = asset.averageCost / ratio
+            modelContext.insert(trade)
+        }
+    }
+
+    @MainActor
+    private func detectPendingEvents() async {
+        let detector = DividendDetector()
+        if let events = await detector.detectUnrecorded(asset: asset) {
+            pendingEvents = events
+            asset.lastDividendCheckAt = .now
+            try? modelContext.save()
+        }
+    }
+
+    private func refreshPendingEvents() {
+        Task { await detectPendingEvents() }
     }
 
     private func formatPrice(_ price: Double, currency: String, market: String) -> String {

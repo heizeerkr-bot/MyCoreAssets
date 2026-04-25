@@ -19,20 +19,32 @@ enum MarketCode: String, CaseIterable, Codable {
 }
 
 enum TradeType: String, CaseIterable, Codable {
-    case buy = "BUY"
-    case sell = "SELL"
+    case buy          = "BUY"
+    case sell         = "SELL"
+    case dividend     = "DIVIDEND"      // 现金分红
+    case split        = "SPLIT"         // 拆股
+    case bonusShare   = "BONUS_SHARE"   // 送股
+    case rightsIssue  = "RIGHTS_ISSUE"  // 配股
 
     var displayName: String {
         switch self {
-        case .buy: return "买入"
-        case .sell: return "卖出"
+        case .buy:         return "买入"
+        case .sell:        return "卖出"
+        case .dividend:    return "分红"
+        case .split:       return "拆股"
+        case .bonusShare:  return "送股"
+        case .rightsIssue: return "配股"
         }
     }
 
     var tintColor: Color {
         switch self {
-        case .buy: return .valuationDeepGreen
-        case .sell: return .valuationRed
+        case .buy:         return .valuationDeepGreen
+        case .sell:        return .valuationRed
+        case .dividend:    return .dividendGold
+        case .split:       return .splitBlue
+        case .bonusShare:  return .bonusPurple
+        case .rightsIssue: return .rightsTeal
         }
     }
 }
