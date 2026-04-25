@@ -7,12 +7,10 @@ import SwiftUI
 
 struct CompactAssetRow: View {
     let asset: Asset
-    /// 当前仓位百分比
     let positionPct: Double
-    /// 估值档位
-    let level: ValuationLevel
-    /// 是否启用隐私模式（金额遮罩）
     let isPrivacy: Bool
+    /// 是否显示当前价格（资产管理页可关掉）
+    var showsPrice: Bool = true
 
     var body: some View {
         HStack(spacing: 0) {
@@ -38,7 +36,7 @@ struct CompactAssetRow: View {
                 .foregroundStyle(Color.themePrimary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.55)
                 .padding(4)
         }
         .frame(width: 56)
@@ -46,77 +44,100 @@ struct CompactAssetRow: View {
     }
 
     private var badgeText: String {
-        // 资产名头 2 个字符（中文取前 2，英文取首单词或前几位）
-        if asset.name.contains("Apple") { return "Apple" }
-        if asset.name.contains("Tesla") { return "Tesla" }
-        if asset.name.contains("BTC") || asset.name.contains("比特币") { return "BTC" }
-        if asset.name.contains("Google") { return "Google" }
-        return String(asset.name.prefix(2))
+        let name = asset.name
+        if name.contains("Apple") { return "Apple" }
+        if name.contains("Tesla") { return "Tesla" }
+        if name.contains("BTC") || name.contains("比特币") { return "BTC" }
+        if name.contains("Google") { return "Google" }
+        return String(name.prefix(2))
     }
 
     // MARK: - Right Content
 
     private var rightContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 第一行：名 + 市场标签 + 估值标签 + 价格
-            HStack(alignment: .top, spacing: 6) {
-                Text(asset.name)
-                    .font(.bodyText)
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(1)
-                Text(marketLabel)
-                    .font(.smallCaption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.themeLight)
-                    .foregroundStyle(Color.themePrimary)
-                    .clipShape(Capsule())
-                Text(level.rawValue)
-                    .font(.smallCaption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(level.color.opacity(0.12))
-                    .foregroundStyle(level.color)
-                    .clipShape(Capsule())
-                Spacer()
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            firstRow
+            secondRow
+            thirdRow
+        }
+    }
+
+    private var firstRow: some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(asset.name)
+                .font(.bodyText)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(1)
+            Text(marketLabel)
+                .font(.smallCaption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.themeLight)
+                .foregroundStyle(Color.themePrimary)
+                .clipShape(Capsule())
+            valuationTag
+            Spacer(minLength: 4)
+            if showsPrice {
                 Text(priceText.maskedIfPrivacy(isPrivacy))
                     .font(.bodyText)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.textPrimary)
+                    .lineLimit(1)
             }
+        }
+    }
 
-            // 第二行：仓位标签 + 进度条 + 当前 %
-            HStack(spacing: 8) {
-                Text("仓位")
-                    .font(.smallCaption)
-                    .foregroundStyle(Color.textSecondary)
-                PositionBar(current: positionPct, target: asset.targetPositionRatio,
-                            max: asset.maxPositionRatio, height: 5)
-                    .frame(maxWidth: .infinity)
-                Text(formatPercent(positionPct))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.textPrimary)
-                    .frame(minWidth: 48, alignment: .trailing)
-            }
+    @ViewBuilder
+    private var valuationTag: some View {
+        if asset.hasValuationConfigured {
+            let lvl = asset.valuationLevel
+            Text(lvl.rawValue)
+                .font(.smallCaption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(lvl.color.opacity(0.12))
+                .foregroundStyle(lvl.color)
+                .clipShape(Capsule())
+        } else {
+            Text("估值未设置")
+                .font(.smallCaption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.divider.opacity(0.5))
+                .foregroundStyle(Color.textTertiary)
+                .clipShape(Capsule())
+        }
+    }
 
-            // 第三行：偏离提示 + 目标
-            HStack(spacing: 4) {
-                Text(deviationText)
-                    .font(.smallCaption)
-                    .foregroundStyle(deviationColor)
-                Spacer()
-                if asset.hasTargetPosition {
-                    Text("目标 \(formatPercent(asset.targetPositionRatio))")
-                        .font(.smallCaption)
-                        .foregroundStyle(Color.textSecondary)
-                } else {
-                    Text("未设目标")
-                        .font(.smallCaption)
-                        .foregroundStyle(Color.textTertiary)
-                }
-            }
+    private var secondRow: some View {
+        HStack(spacing: 8) {
+            Text("仓位")
+                .font(.smallCaption)
+                .foregroundStyle(Color.textSecondary)
+            PositionBar(current: positionPct, target: asset.targetPositionRatio,
+                        max: asset.maxPositionRatio, height: 5)
+                .frame(maxWidth: .infinity)
+            Text(formatPercent(positionPct))
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.textPrimary)
+                .frame(minWidth: 48, alignment: .trailing)
+        }
+    }
+
+    private var thirdRow: some View {
+        HStack(spacing: 4) {
+            Text(deviationText)
+                .font(.smallCaption)
+                .foregroundStyle(deviationColor)
+                .lineLimit(1)
+            Spacer()
+            Text(asset.hasTargetPosition
+                 ? "目标 \(formatPercent(asset.targetPositionRatio))"
+                 : "未设目标")
+                .font(.smallCaption)
+                .foregroundStyle(Color.textTertiary)
         }
     }
 
@@ -134,15 +155,8 @@ struct CompactAssetRow: View {
     }
 
     private var priceText: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = (asset.market == "BTC" && asset.currentPrice < 1) ? 4 : 2
-        if asset.market == "BTC" && asset.currentPrice >= 10000 {
-            formatter.maximumFractionDigits = 0
-        }
-        let num = formatter.string(from: NSNumber(value: asset.currentPrice)) ?? "0.00"
-        return "\(currencySymbol)\(num)"
+        let body = AppNumberFormat.priceString(asset.currentPrice, currency: asset.currency, market: asset.market)
+        return "\(currencySymbol)\(body)"
     }
 
     private var currencySymbol: String {
@@ -159,21 +173,23 @@ struct CompactAssetRow: View {
     }
 
     private var deviationText: String {
-        guard asset.hasTargetPosition else { return "未设估值" }
+        guard asset.hasTargetPosition else { return "尚未设置目标仓位" }
         let dev = positionPct - asset.targetPositionRatio
+        if let maxV = asset.maxPositionRatio, positionPct >= maxV { return "已超过仓位上限" }
         if dev >= 5 { return "高于目标 +\(String(format: "%.1f", dev))%" }
-        if dev > 0 { return "略高 +\(String(format: "%.1f", dev))%" }
-        if dev < -5 { return "低于目标 \(String(format: "%.1f", dev))%" }
-        if dev < 0 { return "略低 \(String(format: "%.1f", dev))%" }
-        return "已达目标"
+        if dev > 1 { return "略高于目标 +\(String(format: "%.1f", dev))%" }
+        if dev <= -5 { return "低于目标 \(String(format: "%.1f", dev))%" }
+        if dev < -1 { return "略低于目标 \(String(format: "%.1f", dev))%" }
+        return "接近目标仓位"
     }
 
     private var deviationColor: Color {
         guard asset.hasTargetPosition else { return .textTertiary }
         let dev = positionPct - asset.targetPositionRatio
-        if asset.maxPositionRatio.map({ positionPct >= $0 }) == true { return .lossRed }
+        if let maxV = asset.maxPositionRatio, positionPct >= maxV { return .lossRed }
         if dev >= 5 { return .valuationOrange }
         if abs(dev) <= 2 { return .profitGreen }
         return .themePrimary
     }
 }
+

@@ -129,7 +129,8 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showingSortSheet) {
                 SortSheetView(selectedOption: $selectedSortOption)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.fraction(0.45)])
+                    .presentationDragIndicator(.visible)
             }
             .alert("提示", isPresented: Binding(
                 get: { refreshMessage != nil },

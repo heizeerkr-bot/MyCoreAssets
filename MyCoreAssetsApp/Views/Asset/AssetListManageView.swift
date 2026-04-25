@@ -17,18 +17,25 @@ struct AssetListManageView: View {
 
     private var portfolio: Portfolio? { portfolios.first }
 
+    private var totalPortfolioValueCNY: Double {
+        let assetsValue = assets.reduce(0) { $0 + $1.currentValueCNY }
+        return assetsValue + (portfolio?.currentCashCNY ?? 0)
+    }
+
+    private var totalTargetRatio: Double {
+        assets.reduce(0) { $0 + $1.targetPositionRatio }
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             Group {
                 if assets.isEmpty {
                     emptyState
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.systemBackground))
                 } else {
-                    assetList
-                        .background(Color.pageBg)
+                    contentScrollView
                 }
             }
+            .background(Color.pageBg)
             .navigationTitle("资产管理")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -84,53 +91,85 @@ struct AssetListManageView: View {
         }
     }
 
-    private var assetList: some View {
+    // MARK: - Content
+
+    private var contentScrollView: some View {
         List {
-            ForEach(assets) { asset in
-                Button {
-                    path.append(asset.id)
-                } label: {
-                    HStack(spacing: Spacing.sm) {
-                        Circle()
-                            .fill(asset.valuationLevel.color)
-                            .frame(width: Spacing.sm, height: Spacing.sm)
+            Section {
+                targetConfigHero
+                    .listRowInsets(EdgeInsets(top: 0, leading: Spacing.screenPadding, bottom: Spacing.md, trailing: Spacing.screenPadding))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
 
-                        Text(asset.name)
-                            .font(.bodyText)
-                            .foregroundColor(.textPrimary)
-
-                        Text(asset.marketDisplayName)
-                            .font(.smallCaption)
-                            .foregroundColor(.textSecondary)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, Spacing.xs)
-                            .background(Color.pageBg)
-                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-
-                        Spacer()
-
-                        Text("目标 \(String(format: "%.0f", asset.targetPositionRatio))%")
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
+            Section {
+                ForEach(assets) { asset in
+                    AssetManageRow(
+                        asset: asset,
+                        currentPositionPct: asset.currentPositionRatio(totalPortfolioCNY: totalPortfolioValueCNY)
+                    ) {
+                        path.append(asset.id)
                     }
-                    .padding(.vertical, Spacing.xs)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        deleteTargets = [asset]
-                        showingDeleteConfirm = true
-                    } label: {
-                        Image(systemName: "trash")
+                    .listRowInsets(EdgeInsets(top: 0, leading: Spacing.screenPadding, bottom: Spacing.sm, trailing: Spacing.screenPadding))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            deleteTargets = [asset]
+                            showingDeleteConfirm = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
                     }
                 }
-                .listRowBackground(Color.cardBg)
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
+
+    private var targetConfigHero: some View {
+        HeroCard(style: .light) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 4) {
+                        Text("目标配置")
+                            .font(.bodyText)
+                            .foregroundStyle(Color.textSecondary)
+                        Image(systemName: "info.circle")
+                            .font(.smallCaption)
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    Text("\(String(format: "%.0f", totalTargetRatio))%")
+                        .font(.heroAmount)
+                        .foregroundStyle(targetTotalColor)
+                    Text(targetTotalSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Spacer()
+            }
+        }
+        .frame(height: 140)
+    }
+
+    private var targetTotalColor: Color {
+        if totalTargetRatio > 100 + 0.5 { return .valuationOrange }
+        if totalTargetRatio < 100 - 0.5 { return .textSecondary }
+        return .themePrimary
+    }
+
+    private var targetTotalSubtitle: String {
+        if totalTargetRatio > 100 + 0.5 {
+            return "已超配 \(String(format: "%.0f", totalTargetRatio - 100))%"
+        }
+        if totalTargetRatio < 100 - 0.5 {
+            return "未配置 \(String(format: "%.0f", 100 - totalTargetRatio))%"
+        }
+        return "总目标仓位"
+    }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: Spacing.md) {
@@ -156,7 +195,10 @@ struct AssetListManageView: View {
             Spacer()
         }
         .padding(.horizontal, Spacing.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    // MARK: - Helpers
 
     private func addAssetsFromSearchSelection() {
         guard !selectedAssetIDs.isEmpty else { return }
@@ -210,14 +252,13 @@ struct AssetListManageView: View {
     private func deleteSelectedAssets() {
         guard let portfolio else { return }
         for asset in deleteTargets {
-            // Restore cash: reverse all transactions for this asset
             var cashToRestore: Double = 0
             for transaction in asset.transactions {
                 let amount = transaction.cnyAmount ?? 0
                 if transaction.tradeType == .buy {
-                    cashToRestore += amount   // buy deducted cash, restore it
+                    cashToRestore += amount
                 } else {
-                    cashToRestore -= amount   // sell added cash, take it back
+                    cashToRestore -= amount
                 }
             }
             portfolio.currentCashCNY += cashToRestore
@@ -225,6 +266,101 @@ struct AssetListManageView: View {
         }
         try? modelContext.save()
         deleteTargets.removeAll()
+    }
+}
+
+// MARK: - Manage Row（资产管理用紧凑行）
+
+private struct AssetManageRow: View {
+    let asset: Asset
+    let currentPositionPct: Double
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 0) {
+                badge
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack(spacing: 6) {
+                        Text(asset.name)
+                            .font(.bodyText)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.textPrimary)
+                            .lineLimit(1)
+                        Text(marketLabel)
+                            .font(.smallCaption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.themeLight)
+                            .foregroundStyle(Color.themePrimary)
+                            .clipShape(Capsule())
+                        Spacer()
+                    }
+                    PositionBar(
+                        current: currentPositionPct,
+                        target: asset.targetPositionRatio,
+                        max: asset.maxPositionRatio,
+                        height: 5
+                    )
+                }
+                .padding(.horizontal, Spacing.cardPadding)
+                .padding(.vertical, Spacing.cardPadding)
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(asset.hasTargetPosition
+                         ? "目标 \(String(format: "%.0f", asset.targetPositionRatio))%"
+                         : "未设目标")
+                        .font(.smallCaption)
+                        .foregroundStyle(asset.hasTargetPosition ? Color.textSecondary : Color.textTertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.smallCaption)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .padding(.trailing, Spacing.cardPadding)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
+            .cardShadow()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var badge: some View {
+        ZStack {
+            Color.themeLight
+            Text(badgeText)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.themePrimary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.55)
+                .padding(4)
+        }
+        .frame(width: 56)
+        .frame(maxHeight: .infinity)
+    }
+
+    private var badgeText: String {
+        let name = asset.name
+        if name.contains("Apple") { return "Apple" }
+        if name.contains("Tesla") { return "Tesla" }
+        if name.contains("BTC") || name.contains("比特币") { return "BTC" }
+        if name.contains("Google") { return "Google" }
+        return String(name.prefix(2))
+    }
+
+    private var marketLabel: String {
+        switch asset.market {
+        case "CN": return "A股"
+        case "HK": return "港股"
+        case "US": return "美股"
+        case "BTC": return "加密"
+        case "FUND": return "基金"
+        default: return asset.market
+        }
     }
 }
 

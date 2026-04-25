@@ -1,164 +1,28 @@
 import SwiftUI
 
+// V2.0.1：看板资产卡片改成紧凑横向布局，wrapper 调用 CompactAssetRow。
+// 旧的纵向大卡片（含仓位条+lightbulb 引导）已废弃；引导通过点击行进入详情页提供。
+
 struct AssetCardView: View {
     let asset: Asset
     let totalPortfolioValueCNY: Double
 
-    private var currentPositionPercent: Double {
+    @AppStorage(PrivacyMode.storageKey) private var isPrivacy = false
+
+    private var positionPct: Double {
         asset.currentPositionRatio(totalPortfolioCNY: totalPortfolioValueCNY)
     }
 
-    private var targetPositionPercent: Double {
-        asset.targetPositionRatio
-    }
-
-    private var maxPositionPercent: Double {
-        asset.maxPositionRatio ?? 100
-    }
-
-    private var positionDeviation: Double {
-        currentPositionPercent - targetPositionPercent
-    }
-
-    private var deviationText: String {
-        let absValue = abs(positionDeviation)
-        if !asset.hasTargetPosition {
-            return "尚未设置目标仓位"
-        }
-        if currentPositionPercent >= maxPositionPercent {
-            return "已超过仓位上限"
-        }
-        if positionDeviation > 1 {
-            return "超出目标 +\(String(format: "%.1f", absValue))%"
-        }
-        if positionDeviation < -1 {
-            return "低于目标 -\(String(format: "%.1f", absValue))%"
-        }
-        return "接近目标仓位"
-    }
-
-    private var deviationColor: Color {
-        if !asset.hasTargetPosition { return .textTertiary }
-        if currentPositionPercent >= maxPositionPercent { return .valuationRed }
-        if positionDeviation > 3 { return .valuationOrange }
-        if positionDeviation < -3 { return .themePrimary }
-        return .valuationDeepGreen
-    }
-
-    private var needsConfigGuidance: Bool {
-        !asset.hasValuationConfigured || !asset.hasTargetPosition
-    }
-
-    private var guidanceText: String {
-        switch (asset.hasValuationConfigured, asset.hasTargetPosition) {
-        case (false, false): return "设置理想买卖价与目标仓位，开启估值与仓位分析"
-        case (false, true):  return "设置理想买卖价，查看估值状态"
-        case (true, false):  return "设置目标仓位，查看仓位偏离"
-        case (true, true):   return ""
-        }
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(asset.name)
-                        .font(.sectionTitle)
-                        .foregroundColor(.textPrimary)
-
-                    HStack(spacing: Spacing.xs) {
-                        Text(asset.marketDisplayName)
-                            .font(.smallCaption)
-                            .foregroundColor(.textSecondary)
-
-                        if asset.hasValuationConfigured {
-                            Text(asset.valuationLevel.rawValue)
-                                .font(.smallCaption)
-                                .foregroundColor(asset.valuationLevel.color)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, Spacing.xs)
-                                .background(asset.valuationLevel.color.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                        } else {
-                            Text("估值未设置")
-                                .font(.smallCaption)
-                                .foregroundColor(.textTertiary)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, Spacing.xs)
-                                .background(Color.divider.opacity(0.5))
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                        }
-                    }
-                }
-
-                Spacer()
-
-                Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
-                    .font(.assetPrice)
-                    .foregroundColor(.textPrimary)
-            }
-
-            Spacer().frame(height: Spacing.md)
-
-            VStack(spacing: Spacing.sm) {
-                HStack {
-                    Text("仓位")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    Spacer()
-                    Text("\(String(format: "%.1f", currentPositionPercent))%")
-                        .font(.positionPercent)
-                        .foregroundColor(.themePrimary)
-                }
-
-                LegacyPositionBar(
-                    current: currentPositionPercent,
-                    target: targetPositionPercent,
-                    max: asset.maxPositionRatio
-                )
-
-                HStack {
-                    Text(deviationText)
-                        .font(.smallCaption)
-                        .foregroundColor(deviationColor)
-                    Spacer()
-                    Text(asset.hasTargetPosition
-                         ? "目标 \(String(format: "%.0f", targetPositionPercent))%"
-                         : "未设目标")
-                        .font(.smallCaption)
-                        .foregroundColor(.textTertiary)
-                }
-            }
-
-            if needsConfigGuidance {
-                Spacer().frame(height: Spacing.sm)
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "lightbulb.fill")
-                        .font(.smallCaption)
-                    Text(guidanceText)
-                        .font(.smallCaption)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.smallCaption)
-                }
-                .foregroundColor(.themePrimary)
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.xs)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.themeLight)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-            }
-        }
-        .padding(Spacing.cardPadding)
-        .background(Color.cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
-    }
-
-    private func formatPrice(_ price: Double, currency: String) -> String {
-        AppNumberFormat.priceString(price, currency: currency, market: asset.market)
+        CompactAssetRow(
+            asset: asset,
+            positionPct: positionPct,
+            isPrivacy: isPrivacy
+        )
     }
 }
+
+// MARK: - Legacy Position Bar (still used by AssetDetailView/Buy/Sell, will be migrated in PR 3)
 
 struct LegacyPositionBar: View {
     let current: Double
