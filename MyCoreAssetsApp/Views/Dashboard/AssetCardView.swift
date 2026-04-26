@@ -59,51 +59,52 @@ struct AssetCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            HStack(alignment: .top, spacing: Spacing.md) {
-                AssetBadgeView(text: badgeText)
-
-                VStack(alignment: .leading, spacing: Spacing.sm) {
+            // 顶部行：资产名 + 市场 + 估值标签 / 价格 + chevron
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(asset.name)
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                        .truncationMode(.tail)
 
                     HStack(spacing: Spacing.sm) {
                         Text(asset.marketDisplayName)
-                            .font(.system(size: 14, weight: .regular))
+                            .font(.system(size: 13, weight: .regular))
                             .foregroundColor(.textSecondary)
 
                         valuationBadge
                     }
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: Spacing.sm)
 
                 HStack(alignment: .center, spacing: Spacing.xs) {
                     Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.system(size: 19, weight: .semibold, design: .rounded))
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                        .fixedSize(horizontal: true, vertical: false)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.textTertiary.opacity(0.7))
                 }
             }
 
+            // 仓位区
             VStack(spacing: Spacing.sm) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("仓位")
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.textBody)
                     Spacer()
                     Text("\(String(format: "%.1f", currentPositionPercent))%")
-                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(.themePrimary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 PositionBar(
@@ -115,32 +116,33 @@ struct AssetCardView: View {
 
                 HStack(alignment: .firstTextBaseline) {
                     Text(deviationText)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(deviationColor)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .truncationMode(.tail)
                     Spacer()
                     Text(asset.hasTargetPosition
                          ? "目标 \(String(format: "%.0f", targetPositionPercent))%"
                          : "未设目标")
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.textSecondary)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
             }
 
             if needsConfigGuidance {
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "lightbulb.fill")
-                        .font(.smallCaption)
+                        .font(.system(size: 11))
                     Text(guidanceText)
-                        .font(.smallCaption)
+                        .font(.system(size: 12, weight: .regular))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .truncationMode(.tail)
                     Spacer()
                 }
                 .foregroundColor(.themePrimary)
                 .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.xs)
+                .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.themeLight.opacity(0.78))
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm, style: .continuous))
@@ -167,6 +169,7 @@ struct AssetCardView: View {
                 .padding(.vertical, 2)
                 .background(valuationColor.opacity(0.1))
                 .clipShape(Capsule(style: .continuous))
+                .fixedSize(horizontal: true, vertical: false)
         } else {
             Text("估值未设置")
                 .font(.system(size: 12, weight: .regular))
@@ -175,19 +178,12 @@ struct AssetCardView: View {
                 .padding(.vertical, 2)
                 .background(Color.divider.opacity(0.45))
                 .clipShape(Capsule(style: .continuous))
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 
     private var valuationColor: Color {
         asset.valuationLevel == .fair ? .themePrimary : asset.valuationLevel.color
-    }
-
-    private var badgeText: String {
-        let parts = asset.name.split(separator: " ")
-        if let last = parts.last, last.unicodeScalars.allSatisfy(\.isASCII), last.count <= 9 {
-            return String(last)
-        }
-        return String(asset.name.prefix(2))
     }
 }
 
@@ -242,23 +238,6 @@ struct PositionBar: View {
             .frame(height: 18)
         }
         .frame(height: 18)
-    }
-}
-
-struct AssetBadgeView: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: text.count > 4 ? 14 : 18, weight: .semibold))
-            .foregroundColor(.themePrimary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.62)
-            .frame(width: 56, height: 56)
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous)
-                    .fill(Color(hex: "F4F8FF"))
-            )
     }
 }
 
