@@ -23,3 +23,7 @@ Package.resolved
 
 # Claude Code
 .claude/
+
+# 前端设计资产备份 / 中间产物，不入仓
+前端效果图-历史和备份/
+前端切图资源/历史和过程/
