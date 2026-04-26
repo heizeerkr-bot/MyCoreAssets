@@ -21,7 +21,6 @@ struct AssetCardView: View {
     }
 
     private var deviationText: String {
-        let absValue = abs(positionDeviation)
         if !asset.hasTargetPosition {
             return "尚未设置目标仓位"
         }
@@ -29,10 +28,10 @@ struct AssetCardView: View {
             return "已超过仓位上限"
         }
         if positionDeviation > 1 {
-            return "超出目标 +\(String(format: "%.1f", absValue))%"
+            return "高于目标 +\(String(format: "%.1f", positionDeviation))%"
         }
         if positionDeviation < -1 {
-            return "低于目标 -\(String(format: "%.1f", absValue))%"
+            return "低于目标 \(String(format: "%.1f", positionDeviation))%"
         }
         return "接近目标仓位"
     }
@@ -59,104 +58,136 @@ struct AssetCardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(asset.name)
-                        .font(.sectionTitle)
-                        .foregroundColor(.textPrimary)
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(alignment: .top, spacing: Spacing.md) {
+                AssetBadgeView(text: badgeText)
 
-                    HStack(spacing: Spacing.xs) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(asset.name)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    HStack(spacing: Spacing.sm) {
                         Text(asset.marketDisplayName)
-                            .font(.smallCaption)
+                            .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.textSecondary)
 
-                        if asset.hasValuationConfigured {
-                            Text(asset.valuationLevel.rawValue)
-                                .font(.smallCaption)
-                                .foregroundColor(asset.valuationLevel.color)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, Spacing.xs)
-                                .background(asset.valuationLevel.color.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                        } else {
-                            Text("估值未设置")
-                                .font(.smallCaption)
-                                .foregroundColor(.textTertiary)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, Spacing.xs)
-                                .background(Color.divider.opacity(0.5))
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                        }
+                        valuationBadge
                     }
                 }
 
-                Spacer()
+                Spacer(minLength: Spacing.sm)
 
-                Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
-                    .font(.assetPrice)
-                    .foregroundColor(.textPrimary)
+                HStack(alignment: .center, spacing: Spacing.xs) {
+                    Text("\(asset.currencySymbol)\(formatPrice(asset.currentPrice, currency: asset.currency))")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundColor(.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.textTertiary.opacity(0.7))
+                }
             }
 
-            Spacer().frame(height: Spacing.md)
-
             VStack(spacing: Spacing.sm) {
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text("仓位")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.textBody)
                     Spacer()
                     Text("\(String(format: "%.1f", currentPositionPercent))%")
-                        .font(.positionPercent)
+                        .font(.system(size: 26, weight: .semibold, design: .rounded))
                         .foregroundColor(.themePrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
 
                 PositionBar(
                     current: currentPositionPercent,
                     target: targetPositionPercent,
-                    max: asset.maxPositionRatio
+                    max: asset.maxPositionRatio,
+                    fillColor: deviationColor
                 )
 
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text(deviationText)
-                        .font(.smallCaption)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(deviationColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Spacer()
                     Text(asset.hasTargetPosition
                          ? "目标 \(String(format: "%.0f", targetPositionPercent))%"
                          : "未设目标")
-                        .font(.smallCaption)
-                        .foregroundColor(.textTertiary)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.textSecondary)
                 }
             }
 
             if needsConfigGuidance {
-                Spacer().frame(height: Spacing.sm)
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "lightbulb.fill")
                         .font(.smallCaption)
                     Text(guidanceText)
                         .font(.smallCaption)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.smallCaption)
                 }
                 .foregroundColor(.themePrimary)
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, Spacing.xs)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.themeLight)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                .background(Color.themeLight.opacity(0.78))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm, style: .continuous))
             }
         }
-        .padding(Spacing.cardPadding)
+        .padding(.horizontal, 18)
+        .padding(.vertical, Spacing.lg)
         .background(Color.cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadow(color: .black.opacity(0.04), radius: Spacing.sm, x: 0, y: Spacing.xs)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
+        .shadow(color: .black.opacity(0.06), radius: 16, x: 0, y: 8)
     }
 
     private func formatPrice(_ price: Double, currency: String) -> String {
         AppNumberFormat.priceString(price, currency: currency, market: asset.market)
+    }
+
+    @ViewBuilder
+    private var valuationBadge: some View {
+        if asset.hasValuationConfigured {
+            Text(asset.valuationLevel.rawValue)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(valuationColor)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(valuationColor.opacity(0.1))
+                .clipShape(Capsule(style: .continuous))
+        } else {
+            Text("估值未设置")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(.textTertiary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Color.divider.opacity(0.45))
+                .clipShape(Capsule(style: .continuous))
+        }
+    }
+
+    private var valuationColor: Color {
+        asset.valuationLevel == .fair ? .themePrimary : asset.valuationLevel.color
+    }
+
+    private var badgeText: String {
+        let parts = asset.name.split(separator: " ")
+        if let last = parts.last, last.unicodeScalars.allSatisfy(\.isASCII), last.count <= 9 {
+            return String(last)
+        }
+        return String(asset.name.prefix(2))
     }
 }
 
@@ -164,42 +195,70 @@ struct PositionBar: View {
     let current: Double
     let target: Double
     let max: Double?
+    let fillColor: Color
+
+    init(current: Double, target: Double, max: Double?, fillColor: Color = .themePrimary) {
+        self.current = current
+        self.target = target
+        self.max = max
+        self.fillColor = fillColor
+    }
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let barHeight = Spacing.sm
-            let maxLimit = max ?? 100
-            let ceiling = Swift.max(maxLimit + 5, current + 5)
+            let barHeight: CGFloat = 6
+            let maxLimit = max ?? 0
+            let ceiling = Swift.max(10.0, current, target, maxLimit) + 5
             let scale = width / CGFloat(ceiling)
+            let currentWidth = Swift.min(CGFloat(current) * scale, width)
+            let markerMaxOffset = Swift.max(width - 2, 0)
+            let targetOffset = Swift.min(Swift.max(CGFloat(target) * scale - 1, 0), markerMaxOffset)
+            let maxOffset = Swift.min(Swift.max(CGFloat(maxLimit) * scale - 1, 0), markerMaxOffset)
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(Color.divider.opacity(0.5))
+                    .fill(Color.divider.opacity(0.7))
                     .frame(height: barHeight)
 
                 RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(
-                        current >= maxLimit ? Color.valuationRed :
-                        current > target ? Color.valuationOrange :
-                        Color.themePrimary
-                    )
-                    .frame(width: Swift.min(CGFloat(current) * scale, width), height: barHeight)
+                    .fill(fillColor)
+                    .frame(width: currentWidth, height: barHeight)
 
-                Rectangle()
-                    .fill(Color.textTertiary)
-                    .frame(width: Spacing.sm / Spacing.xs, height: Spacing.md)
-                    .offset(x: CGFloat(target) * scale)
+                if target > 0 {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color.valuationOrange.opacity(0.8))
+                        .frame(width: 2, height: 18)
+                        .offset(x: targetOffset)
+                }
 
-                if let max {
-                    Rectangle()
-                        .fill(Color.valuationRed.opacity(0.6))
-                        .frame(width: Spacing.sm / Spacing.xs, height: Spacing.md)
-                        .offset(x: CGFloat(max) * scale)
+                if maxLimit > 0 {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color.valuationRed.opacity(0.75))
+                        .frame(width: 2, height: 18)
+                        .offset(x: maxOffset)
                 }
             }
+            .frame(height: 18)
         }
-        .frame(height: Spacing.md)
+        .frame(height: 18)
+    }
+}
+
+struct AssetBadgeView: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: text.count > 4 ? 14 : 18, weight: .semibold))
+            .foregroundColor(.themePrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.62)
+            .frame(width: 56, height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous)
+                    .fill(Color(hex: "F4F8FF"))
+            )
     }
 }
 

@@ -62,8 +62,8 @@ struct DashboardView: View {
                     )
 
                     HStack {
-                        Text("核心资产 (\(assets.count))")
-                            .font(.sectionTitle)
+                        Text("核心资产（\(assets.count)）")
+                            .font(.system(size: 25, weight: .bold))
                             .foregroundColor(.textPrimary)
 
                         Spacer()
@@ -73,33 +73,36 @@ struct DashboardView: View {
                         } label: {
                             HStack(spacing: Spacing.xs) {
                                 Text("排序")
-                                    .font(.caption)
+                                    .font(.system(size: 17, weight: .medium))
                                 Image(systemName: "arrow.up.arrow.down")
-                                    .font(.smallCaption)
+                                    .font(.system(size: 16, weight: .semibold))
                             }
                             .foregroundColor(.themePrimary)
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.top, Spacing.sm)
+                    .padding(.top, Spacing.md)
 
                     if sortedAssets.isEmpty {
                         emptyStateView
                     } else {
-                        ForEach(sortedAssets) { asset in
-                            NavigationLink {
-                                AssetDetailView(asset: asset, totalPortfolioValueCNY: totalPortfolioValueCNY)
-                            } label: {
-                                AssetCardView(
-                                    asset: asset,
-                                    totalPortfolioValueCNY: totalPortfolioValueCNY
-                                )
+                        LazyVStack(spacing: Spacing.md) {
+                            ForEach(sortedAssets) { asset in
+                                NavigationLink {
+                                    AssetDetailView(asset: asset, totalPortfolioValueCNY: totalPortfolioValueCNY)
+                                } label: {
+                                    AssetCardView(
+                                        asset: asset,
+                                        totalPortfolioValueCNY: totalPortfolioValueCNY
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
                 .padding(.horizontal, Spacing.screenPadding)
+                .padding(.top, Spacing.md)
                 .padding(.bottom, Spacing.xl)
             }
             .refreshable {
@@ -115,21 +118,31 @@ struct DashboardView: View {
                     Button {
                         triggerRefresh(source: "button")
                     } label: {
-                        if isRefreshing {
-                            ProgressView()
-                                .tint(.themePrimary)
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.themePrimary)
+                        ZStack {
+                            Circle()
+                                .fill(Color.cardBg.opacity(0.94))
+                                .frame(width: 44, height: 44)
+                                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+
+                            if isRefreshing {
+                                ProgressView()
+                                    .tint(.themePrimary)
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundColor(.themePrimary)
+                            }
                         }
                     }
                     .buttonStyle(.plain)
                     .disabled(isRefreshing)
+                    .accessibilityLabel("刷新")
                 }
             }
             .sheet(isPresented: $showingSortSheet) {
                 SortSheetView(selectedOption: $selectedSortOption)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.height(338)])
+                    .presentationDragIndicator(.visible)
             }
             .alert("提示", isPresented: Binding(
                 get: { refreshMessage != nil },
